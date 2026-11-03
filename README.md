@@ -54,6 +54,14 @@ To change a hotkey, type a new one in the box on the left of a row (for example 
 | A hotkey does not work | Another program may use it. Pick a different key. |
 | Windows SmartScreen or antivirus warning | Game trainers write to another process's memory, which security tools often flag. Only download from this repository's Releases page. |
 
+## Related project
+
+**[Ramreader](https://github.com/fathun12/Ramreader)** is the tool used to find the memory addresses and code patches built into this trainer.
+
+It is a RAM reader that finds stable game memory addresses with as few restarts as possible, plus a Trainer that can set values, lock them, and apply god mode through code patches. Built with WPF, WPF-UI and .NET 10.
+
+If the game is updated and a feature stops working, Ramreader is how new addresses are found for the next version of this trainer.
+
 ## Disclaimer
 
 Use at your own risk. Intended for offline and single-player use. Using trainers online can get your account banned. This project is not affiliated with or endorsed by CyberConnect2, Bandai Namco, or the Naruto and Boruto rights holders. All trademarks belong to their owners.
