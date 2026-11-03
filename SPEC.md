@@ -55,7 +55,7 @@ D:\Projects\NSUNS Trainer\
 
 Cara kerja patch (jangan diubah tanpa alasan kuat): instruksi penulis (HP, chakra, gauge, Kawarimi) dipakai bersama tim dan musuh. Patch mengganti instruksi dengan `jmp` ke code cave. Cave membandingkan register basis objek penulis dengan hingga 12 slot (alamat karakter satu sisi pemain); sama = lewati penulisan, beda = jalankan instruksi asli. Sisi pemain ditentukan Mode Tree: tiap karakter punya simpul dengan tiga penunjuk (+0x00, +0x08, +0x10) yang saling tersambung timbal balik; awal simpul = nilai register basis dikurangi 0x28. `SideTree.Collect` menelusurinya dari objek pemain (alamat nilai pemain dikurangi displacement instruksi), thread latar memperbarui slot tiap 10 ms. Penanda 12 byte (Mode Team) gagal di mirror match, jangan dipakai.
 
-Isi `GameData.cs`: proses `NSUNSC`; `ExpectedModuleSize` 166223872; kartu nilai: **Gold Ticket** (Int32) dan **Team Bar** (Float, AutoLock "100": dikunci otomatis di 100 sekali per proses game). Patch (semua Mode Tree, hotkey): **God Mode** F2 (+94BAE2 `F3 0F 11 41 10`), **Unlimited Chakra** F3 (+94BA22 `F3 0F 11 41 18`), **Team Tag** F4 (+94BB7A `F3 0F 11 40 2C`, summon), **Tag Switch** F7 (+94C3B6 `F3 0F 11 70 2C`), **Unlimited Kawarimi** F9 (+94C09E `F3 0F 11 51 20`). Kartu alamat "Kawarimi" di data = jalur KAWARIMI 2 dari sesi Ramreader (memang yang dipakai) dan hanya pemilik alamat untuk patch. Cooldown (+21BDC30) jalan buntu, tidak ikut. Lokasi kode dicari lewat signature di modul utama (sekali per proses). Nilai hasil Ramreader tervalidasi di NSUNSC; fitur lain selain yang tercantum di atas tidak ada.
+Isi `GameData.cs`: proses `NSUNSC`; `ExpectedModuleSize` 166223872; kartu nilai: **Gold Ticket** (Int32) dan **Team Bar** (Float, tampil sebagai baris patch "Unlimited Team Bar", hotkey default F5, toggle = kunci di 100; TIDAK lagi nyala otomatis, user tidak mau). Patch (semua Mode Tree, hotkey): **God Mode** F2 (+94BAE2 `F3 0F 11 41 10`), **Unlimited Chakra** F3 (+94BA22 `F3 0F 11 41 18`), **Team Tag** F4 (+94BB7A `F3 0F 11 40 2C`, summon), **Tag Switch** F7 (+94C3B6 `F3 0F 11 70 2C`), **Unlimited Kawarimi** F9 (+94C09E `F3 0F 11 51 20`). Kartu alamat "Kawarimi" di data = jalur KAWARIMI 2 dari sesi Ramreader (memang yang dipakai) dan hanya pemilik alamat untuk patch. Cooldown (+21BDC30) jalan buntu, tidak ikut. Lokasi kode dicari lewat signature di modul utama (sekali per proses). Nilai hasil Ramreader tervalidasi di NSUNSC; fitur lain selain yang tercantum di atas tidak ada.
 
 ## 5. Status dan langkah
 
@@ -67,16 +67,26 @@ Daftar langkah pribadi user (posisi disebut tiap pesan):
 | R1-4b | Models, Native, Scanning, Pointers | SUDAH (build lolos) |
 | R1-4c | CodeCave, SideTree, CodePatchLocator, GameData | SUDAH (build lolos) |
 | R1-4d | TrainerSession, HotkeyService, FeatureItem, PatchItem, MainViewModel | SUDAH (build lolos) |
-| R1-4e | Tampilan: `Themes\AppStyles.xaml` (BELUM dibuat; JANGAN buat .xaml kosong, build gagal), edit `App.xaml` (hubungkan AppStyles, template default dotnet), `MainWindow.xaml` dan `MainWindow.xaml.cs` (buat `MainViewModel`, daftarkan `HotkeyService` di `OnSourceInitialized`, panggil `Shutdown()` di `OnClosed`, seperti Ramreader.Trainer), seragamkan pesan error lama berbahasa Indonesia ke Inggris (`Native\ProcessMemory.cs`, `Native\MemoryWriter.cs`, `Cave\CodePatchLocator.cs`, `Cave\CodeCave.cs`) | BELUM |
-| R1-4f | Satu exe untuk dibagikan: `app.manifest` `requireAdministrator`, `AssemblyName` "NSUNS Trainer", publish single-file self-contained win-x64, ikon | BELUM |
-| Ikon | Ikon Ramreader, Ramreader.Trainer, dan NSUNS Trainer (Naruto, beda lagi). Desain ANTI AI SLOP. Versi pertama (kurung siku + kotak/segitiga) DITOLAK user seluruhnya, jangan diulang atau diperbaiki; mulai dari konsep baru dan tanyakan acuan gaya (satu aplikasi yang user suka). Ikon belum terpasang di proyek mana pun | BELUM |
+| R1-4e | Tampilan datar (AppStyles.xaml, App.xaml, MainWindow), hotkey bisa diubah di baris dan tersimpan di %AppData%\NSUNS Trainer\hotkeys.txt, pesan error diseragamkan ke Inggris | SUDAH (build lolos, tampilan dilihat user) |
+| R1-4f | app.manifest requireAdministrator, AssemblyName "NSUNS Trainer", publish single-file self-contained win-x64 (folder publish, tidak masuk git) | SUDAH (exe tes: minta Administrator, tampilan sama, tersambung ke NSUNSC, laporan user) |
+| Ikon | Spiral kotak #E4572E di atas #141211, Assets\NsunsTrainer.ico, dipasang lewat ApplicationIcon (gaya acuan: gambar user, disetujui, jadi standar semua trainer, lihat DESIGN.md bagian 10) | SUDAH dipasang di exe (tampilan ikon belum dilaporkan user) |
 
 Acuan tampilan: `D:\Projects\Ramreader\src\Ramreader.Trainer\MainWindow.xaml` dan `Themes\AppStyles.xaml` (WPF-UI, Mica, dark, kartu `FeatureItem` dan `PatchItem` lewat DataTemplate). Minta file itu lewat perintah clipboard (aturan 8) sebelum menulis XAML. Kontrol WPF biasa tidak mengikuti tema gelap; pakai kontrol WPF-UI (`ui:Button`, `ui:TextBox`, `ui:ToggleSwitch`). Proyek WPF tidak memuat `System.IO` otomatis.
 
 ## 6. Yang BELUM terbukti (jangan dicatat terbukti sebelum user melapor)
 
-NSUNS Trainer belum pernah dijalankan di game. Logika yang disalin dari Ramreader terbukti di sana, tetapi versi mandiri ini baru lolos build. Uji setelah R1-4e: tiap patch (tim kebal, musuh kena), Team Bar auto-lock, Gold Ticket, hotkey, di 3 kondisi (match sekarang, rematch, ganti karakter lalu match baru).
+NSUNS Trainer sudah dijalankan: tersambung ke NSUNSC dan tampil benar (laporan user, 3 Nov 2026). Uji tiap patch di match (tim kebal, musuh kena) belum dilaporkan rinci. Logika yang disalin dari Ramreader terbukti di sana, tetapi versi mandiri ini baru lolos build. Uji setelah R1-4e: tiap patch (tim kebal, musuh kena), Team Bar auto-lock, Gold Ticket, hotkey, di 3 kondisi (match sekarang, rematch, ganti karakter lalu match baru).
 
 ## 7. Penutup tiap pekerjaan
 
 Akhiri dengan: **"MASIH ADA KERJA: <apa>"** atau **"SUDAH SELESAI"**. Selalu sebut langkah berikutnya.
+
+## 8. Catatan sesi 3 Nov 2026
+
+- Standar tampilan dan ikon semua trainer user ada di `DESIGN.md` (sumber: `Themes\AppStyles.xaml`). Aksen warna mengikuti game, gaya UI dan ikon sama.
+- Deskripsi: Team Tag = memanggil teman (RB/LB atau Q/U) tanpa cooldown. Tag Switch = ganti karakter di mode tim tanpa cooldown.
+- Hotkey default: God Mode F2, Unlimited Chakra F3, Team Tag F4, Unlimited Team Bar F5, Tag Switch F7, Unlimited Kawarimi F9. Semua bisa diubah di baris.
+- Ada file `README.md`, `DESIGN.md`, `LICENSE` (gratis, tidak boleh dijual, berlaku untuk exe dan ikon, hak cipta MFNiam / fathun12).
+- Tes lewat exe di folder publish (butuh Administrator). `dotnet run` dari terminal biasa gagal karena manifest.
+- Build ulang gagal "access denied" kalau exe di publish masih berjalan: tutup dulu.
+- Berikutnya: release GitHub v1.0.0 (user membuatnya sendiri di web), lalu ikon di title bar jendela bila user minta.
