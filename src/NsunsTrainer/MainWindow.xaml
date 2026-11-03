@@ -1,0 +1,195 @@
+<ui:FluentWindow x:Class="NsunsTrainer.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="NSUNS Trainer"
+                 Width="520" Height="700"
+                 MinWidth="480" MinHeight="560"
+                 Background="{StaticResource BgBrush}"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 WindowCornerPreference="Round"
+                 WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="NSUNS Trainer" />
+
+        <!-- Warnings, only visible when needed -->
+        <StackPanel Grid.Row="1" Margin="28,8,28,0">
+            <Border Style="{StaticResource Strip}"
+                    Visibility="{Binding HasMessage, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding Message}" Style="{StaticResource BodyText}" FontSize="12.5" TextWrapping="Wrap" />
+            </Border>
+            <Border Style="{StaticResource Strip}"
+                    Visibility="{Binding HasVersionWarning, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding VersionWarning}" Style="{StaticResource BodyText}" FontSize="12.5" TextWrapping="Wrap" />
+            </Border>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="2"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28,0,28,16">
+
+                <!-- VALUES -->
+                <TextBlock Text="VALUES" Style="{StaticResource SectionLabel}" />
+                <ItemsControl ItemsSource="{Binding ValueFeatures}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Row}">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Title}" Style="{StaticResource RowTitle}" />
+                                            <TextBlock Text="{Binding StatusText}" Style="{StaticResource MutedText}" Margin="0,2,12,0" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1" Text="{Binding ValueText}" Style="{StaticResource BigValue}" />
+                                    </Grid>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                        <ui:TextBox Width="130"
+                                                    PlaceholderText="New value"
+                                                    Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}" />
+                                        <ui:Button Margin="8,0,0,0"
+                                                   Content="Set"
+                                                   Appearance="Primary"
+                                                   Command="{Binding ApplyCommand}" />
+                                        <ui:ToggleSwitch Margin="20,0,0,0"
+                                                         VerticalAlignment="Center"
+                                                         Content="Lock"
+                                                         IsChecked="{Binding IsFrozen, Mode=TwoWay}" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding ActionText}" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- HOTKEY ROWS -->
+                <TextBlock Text="PATCHES" Style="{StaticResource SectionLabel}" Margin="0,26,0,8" />
+
+                <!-- Lock-only values (Unlimited Team Bar) -->
+                <ItemsControl ItemsSource="{Binding SwitchFeatures}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Row}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="76" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0" Width="3" Margin="0,0,12,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsFrozen}" Value="True">
+                                                        <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+
+                                    <ui:TextBox Grid.Column="1" Width="64" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="4,4" FontFamily="{StaticResource MonoFont}" FontSize="12" TextAlignment="Center" ToolTip="Hotkey, for example F6 or Ctrl+F6. Click elsewhere to save." Text="{Binding HotkeyText, UpdateSourceTrigger=LostFocus}" />
+
+                                    <StackPanel Grid.Column="2" Margin="4,0,12,0">
+                                        <TextBlock Text="{Binding Title}" Style="{StaticResource RowTitle}" />
+                                        <TextBlock Text="{Binding StatusText}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
+                                        <TextBlock Text="{Binding ActionText}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
+                                        <TextBlock Text="{Binding HotkeyStatus}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
+                                    </StackPanel>
+
+                                    <ui:ToggleSwitch Grid.Column="3"
+                                                     VerticalAlignment="Center"
+                                                     IsChecked="{Binding IsFrozen, Mode=TwoWay}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Code patches -->
+                <ItemsControl ItemsSource="{Binding Patches}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource Row}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="76" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0" Width="3" Margin="0,0,12,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsOn}" Value="True">
+                                                        <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+
+                                    <ui:TextBox Grid.Column="1" Width="64" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="4,4" FontFamily="{StaticResource MonoFont}" FontSize="12" TextAlignment="Center" ToolTip="Hotkey, for example F6 or Ctrl+F6. Click elsewhere to save." Text="{Binding HotkeyText, UpdateSourceTrigger=LostFocus}" />
+
+                                    <StackPanel Grid.Column="2" Margin="4,0,12,0">
+                                        <TextBlock Text="{Binding Title}" Style="{StaticResource RowTitle}" />
+                                        <TextBlock Text="{Binding StatusText}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
+                                        <TextBlock Text="{Binding HotkeyStatus}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
+                                    </StackPanel>
+
+                                    <ui:ToggleSwitch Grid.Column="3"
+                                                     VerticalAlignment="Center"
+                                                     IsChecked="{Binding IsOn, Mode=TwoWay}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Status line -->
+        <Border Grid.Row="3"
+                Padding="28,9"
+                BorderBrush="{StaticResource LineBrush}"
+                BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal">
+                <Ellipse Width="8" Height="8" Margin="0,0,10,0" VerticalAlignment="Center">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="{StaticResource MutedBrush}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Session.IsConnected}" Value="True">
+                                    <Setter Property="Fill" Value="{StaticResource DotOnBrush}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+                <TextBlock Text="{Binding Session.StatusMessage}" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</ui:FluentWindow>
