@@ -26,12 +26,37 @@ Untuk uang atau tiket, pakai **kartu nilai**. Itu yang paling mudah.
 Jangan mengedit file JSON itu lewat `ConvertFrom-Json` / `ConvertTo-Json`.
 
 ### 2. Masukkan ke GameData.cs
-1. Buka `Data\GameData.cs`.
-2. Salin entri **Gold Ticket** yang sudah ada (itu contoh yang terbukti jalan).
-3. Ganti nama (label), tipe nilai, jalur (chains), dan signature dengan hasil dari sesi Ramreader tadi.
-4. Tambahkan label baru ke daftar `FeatureLabels`. Tanpa ini alamatnya ada, tetapi kartunya tidak tampil.
-5. Untuk alamat yang hanya jadi pemilik patch, jangan masukkan label ke `FeatureLabels`.
+Buka `src\NsunsTrainer\Data\GameData.cs`. Ada dua tempat yang diubah.
 
+**Tempat 1: tambah entri alamat** di daftar `Addresses`. Letakkan setelah entri terakhir (beri koma setelah kurung `}` entri sebelumnya). Bentuknya sama dengan Gold Ticket:
+
+```csharp
+new SavedAddress
+{
+    Label = "NAMA_KARTU",
+    ValueType = ScanValueType.Int32,
+    MainModuleSize = ExpectedModuleSize,
+    Chains =
+    {
+        "NSUNSC.exe|OFFSET_BASE|OFFSET1,OFFSET2"
+    }
+},
+```
+
+Penjelasan (semua tulisan huruf kapital di atas adalah tempat pengganti, bukan alamat asli):
+- `Label`: nama yang tampil di kartu.
+- `ValueType`: `Int32` untuk bilangan bulat (Gold Ticket), `Float` untuk desimal (HP, Team Bar).
+- `Chains`: satu baris per jalur stabil dari Ramreader. Formatnya `NSUNSC.exe|alamat-statis-hex|offset-hex,offset-hex`. Kalau alamatnya statis tanpa offset, bagian offset dikosongkan, seperti `"NSUNSC.exe|21DA00C|"` di Gold Ticket.
+- Boleh memasukkan banyak jalur. Trainer mencoba satu per satu sampai ada yang cocok. Gold Ticket punya 17 jalur.
+- `Signatures` tidak wajib untuk kartu nilai. Gold Ticket dan Team Bar tidak memakainya.
+
+**Tempat 2: daftarkan kartunya** di `FeatureLabels` (dekat bagian atas file):
+
+```csharp
+public static readonly string[] FeatureLabels = { "Gold Ticket", "Team Bar", "NAMA_KARTU" };
+```
+
+Tanpa langkah ini alamatnya ada tetapi kartunya tidak tampil di trainer.
 ### 3. Aturan nilai
 - `FeatureItem` menolak nilai di luar 0 sampai 1.000.000.000. Kalau butuh batas lain, ubah `MinValue` / `MaxValue` di `FeatureItem.cs`.
 - Nilai yang dibaca di luar batas dianggap alamat salah, jadi trainer tidak menulis apa pun.
@@ -41,13 +66,18 @@ Kartu baru muncul di bagian VALUES: nilai sekarang, kolom nilai baru, tombol Set
 
 ## B. Baris kunci (mis. "Unlimited X")
 
-Sama seperti bagian A, lalu tambahkan label ke kamus `AutoLock` di `GameData.cs` dengan nilai kuncinya (mis. `"100"`). Entri dengan AutoLock tampil sebagai baris **"Unlimited <label>"** di PATCHES, toggle-nya mengunci nilai.
+Ini yang dipakai Unlimited Team Bar. Alamatnya dibuat seperti bagian A (entri `SavedAddress` dan `FeatureLabels`), lalu tambahkan satu hal lagi: nilai kuncinya di kamus `AutoLock`:
 
-Catatan:
-- Trainer tidak mengunci otomatis. Pengguna menyalakan sendiri lewat toggle atau hotkey.
-- Hotkey bawaan semua baris kunci saat ini **F5**, ditulis tetap di `FeatureItem.cs`. Kalau ada dua baris kunci, keduanya F5 dan bentrok. Ubah salah satunya di kotak hotkey pada aplikasi.
-- Hotkey yang diubah disimpan di `%AppData%\NSUNS Trainer\hotkeys.txt` berdasarkan judul baris.
+```csharp
+public static readonly Dictionary<string, string> AutoLock = new() { ["Team Bar"] = "100", ["NAMA_KARTU"] = "NILAI_KUNCI" };
+```
 
+Efeknya:
+- Kartu itu pindah dari bagian VALUES ke PATCHES sebagai baris **"Unlimited NAMA_KARTU"** dengan kotak hotkey dan toggle.
+- Toggle menyala = nilai dikunci di `NILAI_KUNCI`.
+- Trainer **tidak** mengunci otomatis. Pengguna menyalakan sendiri lewat toggle atau hotkey.
+- Hotkey bawaan semua baris kunci sekarang **F5**, ditulis tetap di `FeatureItem.cs`. Kalau ada dua baris kunci, keduanya F5 dan bentrok. Ubah salah satunya di kotak hotkey aplikasi.
+- Hotkey yang diubah tersimpan di `%AppData%\NSUNS Trainer\hotkeys.txt` berdasarkan judul baris.
 ## C. Patch kode (kebal, tanpa cooldown, dan sejenisnya)
 
 Untuk fitur yang harus menghentikan game menulis nilai, dan hanya untuk sisi pemain.
