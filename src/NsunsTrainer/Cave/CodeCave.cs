@@ -209,5 +209,81 @@ public static class CodeCave
         return bytes;
     }
 
+    /// <summary>The 7 bytes hooked by TreeDamage: subss xmm0,xmm2 followed by comiss xmm1,xmm0.</summary>
+    public static readonly byte[] DamageSiteBytes = { 0xF3, 0x0F, 0x5C, 0xC2, 0x0F, 0x2F, 0xC8 };
+
+    /// <summary>
+    /// "TreeDamage" cave (hook on subss xmm0,xmm2 + comiss xmm1,xmm0, 7 bytes). If the base register equals one of the
+    /// slots (player's side) the original code runs. Otherwise (enemy) and damage (xmm2) greater than 0, xmm2 is multiplied
+    /// by k before the original code runs. No flags are saved: the original comiss sets them again before the next jbe.
+    /// Data block (16 bytes) at dataOffset: +0 scaled count, +4 left-alone count, +8 float k.
+    /// </summary>
+    public static byte[] BuildTreeDamage(byte[] original, CaveInfo info, int slotCount, float k,
+        ulong caveAddress, ulong instructionAddress, out int slotsOffset, out int dataOffset)
+    {
+        int n = original.Length;
+        ulong ret = instructionAddress + (ulong)n;
+        int reg = info.BaseReg;
+        var code = new List<byte>(256);
+        var fixups = new List<(int Pos, bool IsSlot, int Index)>();
+        var sameJumps = new List<int>();
+
+        void RipRef(bool isSlot, int index)
+        {
+            fixups.Add((code.Count, isSlot, index));
+            code.AddRange(new byte[4]);
+        }
+
+        for (int i = 0; i < slotCount; i++)
+        {
+            code.Add((byte)(0x48 | (reg >= 8 ? 4 : 0)));       // cmp reg,[rip+slot_i]
+            code.Add(0x3B);
+            code.Add((byte)(0x05 | ((reg & 7) << 3)));
+            RipRef(true, i);
+            code.Add(0x0F);                                    // je same (rel32)
+            code.Add(0x84);
+            sameJumps.Add(code.Count);
+            code.AddRange(new byte[4]);
+        }
+
+        code.Add(0x0F); code.Add(0x2F); code.Add(0xD1);        // comiss xmm2,xmm1 (xmm1 is 0 at the hook site)
+        code.Add(0x0F); code.Add(0x86);                        // jbe original (damage <= 0 or NaN)
+        int jbeAt = code.Count;
+        code.AddRange(new byte[4]);
+        code.Add(0xFF); code.Add(0x05);                        // scaled++
+        RipRef(false, 0);
+        code.Add(0xF3); code.Add(0x0F); code.Add(0x59); code.Add(0x15);   // mulss xmm2,[rip+k]
+        RipRef(false, 8);
+
+        int originalStart = code.Count;
+        code.AddRange(original);                               // original subss + comiss
+        code.Add(0xE9);                                        // jmp back to the game
+        int jmpBackAt = code.Count;
+        code.AddRange(BitConverter.GetBytes(Rel(ret, caveAddress + (ulong)jmpBackAt + 4)));
+
+        int sameStart = code.Count;
+        code.Add(0xFF); code.Add(0x05);                        // left alone++
+        RipRef(false, 4);
+        code.Add(0xE9);                                        // jmp original
+        int jmpOrigAt = code.Count;
+        code.AddRange(BitConverter.GetBytes(originalStart - (jmpOrigAt + 4)));
+
+        slotsOffset = (code.Count + 7) & ~7;
+        dataOffset = slotsOffset + slotCount * 8;
+        while (code.Count < dataOffset + 16) code.Add(0);
+
+        var bytes = code.ToArray();
+        BitConverter.GetBytes(originalStart - (jbeAt + 4)).CopyTo(bytes, jbeAt);
+        foreach (int at in sameJumps)
+            BitConverter.GetBytes(sameStart - (at + 4)).CopyTo(bytes, at);
+        foreach (var (pos, isSlot, index) in fixups)
+        {
+            int target = isSlot ? slotsOffset + index * 8 : dataOffset + index;
+            BitConverter.GetBytes(target - (pos + 4)).CopyTo(bytes, pos);
+        }
+        BitConverter.GetBytes(k).CopyTo(bytes, dataOffset + 8);
+        return bytes;
+    }
+
     private static int Rel(ulong target, ulong next) => checked((int)((long)target - (long)next));
 }

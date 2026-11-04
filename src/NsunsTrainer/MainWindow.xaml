@@ -113,6 +113,23 @@
                                         <TextBlock Text="{Binding StatusText}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
                                         <TextBlock Text="{Binding ActionText}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
                                         <TextBlock Text="{Binding HotkeyStatus}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
+
+                                        <!-- Damage factor box: only visible on the adjustable Damage Multiplier row -->
+                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                            <StackPanel.Style>
+                                                <Style TargetType="StackPanel">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ShowMultiplier}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </StackPanel.Style>
+                                            <TextBlock Text="Damage x" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                            <ui:TextBox Width="64" Margin="6,0,0,0" Padding="4,4" VerticalAlignment="Center" FontFamily="{StaticResource MonoFont}" FontSize="12" TextAlignment="Center" ToolTip="Damage multiplier, 1 to 10 (for example 2 or 2.5). Click elsewhere to apply." Text="{Binding MultiplierText, UpdateSourceTrigger=LostFocus}" />
+                                            <TextBlock Text="{Binding MultiplierNote}" Style="{StaticResource MutedText}" Margin="10,0,0,0" VerticalAlignment="Center" />
+                                        </StackPanel>
                                     </StackPanel>
 
                                     <ui:ToggleSwitch Grid.Column="3"

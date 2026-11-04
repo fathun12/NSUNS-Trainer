@@ -20,6 +20,12 @@ public sealed class CodePatch
     /// <summary>TreeOwner only: offset of the effect owner pointer inside a character node.</summary>
     public int OwnerOffset { get; set; }
 
+    /// <summary>TreeDamage only: damage factor applied to the enemy side (1,000,000,000 = one hit kill).</summary>
+    public double Multiplier { get; set; }
+
+    /// <summary>TreeDamage only: true when the player may change Multiplier in the UI (1 to 10).</summary>
+    public bool Adjustable { get; set; }
+
     public static string ToHex(IEnumerable<byte> bytes) => string.Join(' ', bytes.Select(b => b.ToString("X2")));
 
     public static bool TryParseBytes(string? text, out byte[] bytes)
