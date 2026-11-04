@@ -9,7 +9,7 @@ using NsunsTrainer.Services;
 namespace NsunsTrainer.ViewModels;
 
 /// <summary>One value card (e.g. Gold Ticket, Team Bar): read, Set, Lock, optional auto-lock.</summary>
-public partial class FeatureItem : ObservableObject
+public partial class FeatureItem : ObservableObject, IToggleRow
 {
     private const double MinValue = 0;
     private const double MaxValue = 1_000_000_000;
@@ -37,6 +37,17 @@ public partial class FeatureItem : ObservableObject
 
     /// <summary>True when the value is only locked on or off (auto-lock): shown as a hotkey row.</summary>
     public bool IsSwitch => !string.IsNullOrWhiteSpace(_autoLock);
+    public string Label => _saved.Label;
+
+    /// <summary>Helper cards (e.g. HP for Instant Awakening) are updated and lockable but not listed under VALUES.</summary>
+    public bool IsHidden { get; init; }
+
+    /// <summary>Switch view of the lock, so the card can sit in the shared switch list.</summary>
+    public bool IsOn
+    {
+        get => IsFrozen;
+        set => IsFrozen = value;
+    }
     public string Title => IsSwitch ? "Unlimited " + _saved.Label : _saved.Label;
     [ObservableProperty] private string _hotkeyText = "";
     public event Action? HotkeyEdited;
@@ -156,6 +167,7 @@ public partial class FeatureItem : ObservableObject
     partial void OnIsFrozenChanged(bool value)
     {
         _freezeHeld = false;
+        OnPropertyChanged(nameof(IsOn));
 
         if (!value)
         {

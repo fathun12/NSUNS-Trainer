@@ -136,5 +136,78 @@ public static class CodeCave
         return bytes;
     }
 
+    /// <summary>
+    /// "Owner" cave for a call hook (E8 rel32, 5 bytes): calls the original target; if the result is 0 and [rdi+18h]
+    /// equals one of the slots (effect owner of the player's side), the result is forced to 1. Only rax is touched.
+    /// Data block (24 bytes) at dataOffset: +0 forced, +4 left alone, +8 last forced owner, +16 last left-alone owner.
+    /// </summary>
+    public static byte[] BuildCallOwner(ulong callTarget, int slotCount, ulong caveAddress, ulong instructionAddress,
+        out int slotsOffset, out int dataOffset)
+    {
+        ulong ret = instructionAddress + 5;
+        var code = new List<byte>(256);
+        var fixups = new List<(int Pos, bool IsSlot, int Index)>();
+        var jes = new List<int>();
+
+        void RipRef(bool isSlot, int index)
+        {
+            fixups.Add((code.Count, isSlot, index));
+            code.AddRange(new byte[4]);
+        }
+
+        code.Add(0xE8);                                        // call original target
+        code.AddRange(BitConverter.GetBytes(Rel(callTarget, caveAddress + 5)));
+        code.Add(0x85); code.Add(0xC0);                        // test eax,eax
+        code.Add(0x0F); code.Add(0x85);                        // jne done (result is already non-zero)
+        int jneAt = code.Count;
+        code.AddRange(new byte[4]);
+        code.Add(0x48); code.Add(0x8B); code.Add(0x47); code.Add(0x18);   // mov rax,[rdi+18h]
+        for (int i = 0; i < slotCount; i++)
+        {
+            code.Add(0x48); code.Add(0x3B); code.Add(0x05);    // cmp rax,[rip+slot_i]
+            RipRef(true, i);
+            code.Add(0x0F); code.Add(0x84);                    // je match
+            jes.Add(code.Count);
+            code.AddRange(new byte[4]);
+        }
+        code.Add(0xFF); code.Add(0x05);                        // left alone++
+        RipRef(false, 4);
+        code.Add(0x48); code.Add(0x89); code.Add(0x05);        // last left-alone owner
+        RipRef(false, 16);
+        code.Add(0x31); code.Add(0xC0);                        // xor eax,eax (original result 0)
+        code.Add(0xE9);                                        // jmp done
+        int jmpDoneAt = code.Count;
+        code.AddRange(new byte[4]);
+
+        int matchStart = code.Count;
+        code.Add(0xFF); code.Add(0x05);                        // forced++
+        RipRef(false, 0);
+        code.Add(0x48); code.Add(0x89); code.Add(0x05);        // last forced owner
+        RipRef(false, 8);
+        code.Add(0xB8);                                        // mov eax,1
+        code.AddRange(BitConverter.GetBytes(1));
+
+        int doneStart = code.Count;
+        code.Add(0xE9);                                        // jmp back to the game (after the call)
+        int jmpRetAt = code.Count;
+        code.AddRange(BitConverter.GetBytes(Rel(ret, caveAddress + (ulong)jmpRetAt + 4)));
+
+        slotsOffset = (code.Count + 7) & ~7;
+        dataOffset = slotsOffset + slotCount * 8;
+        while (code.Count < dataOffset + 24) code.Add(0);
+
+        var bytes = code.ToArray();
+        BitConverter.GetBytes(doneStart - (jneAt + 4)).CopyTo(bytes, jneAt);
+        BitConverter.GetBytes(doneStart - (jmpDoneAt + 4)).CopyTo(bytes, jmpDoneAt);
+        foreach (int at in jes)
+            BitConverter.GetBytes(matchStart - (at + 4)).CopyTo(bytes, at);
+        foreach (var (pos, isSlot, index) in fixups)
+        {
+            int target = isSlot ? slotsOffset + index * 8 : dataOffset + index;
+            BitConverter.GetBytes(target - (pos + 4)).CopyTo(bytes, pos);
+        }
+        return bytes;
+    }
+
     private static int Rel(ulong target, ulong next) => checked((int)((long)target - (long)next));
 }

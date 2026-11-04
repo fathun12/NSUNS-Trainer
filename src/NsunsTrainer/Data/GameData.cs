@@ -11,10 +11,23 @@ public static class GameData
     public const ulong ExpectedModuleSize = 166223872;
 
     /// <summary>Value cards (Set and Lock). All other addresses only exist to find the player for patches.</summary>
-    public static readonly string[] FeatureLabels = { "Gold Ticket", "Team Bar" };
+    public static readonly string[] FeatureLabels = { "Gold Ticket", "Team Bar", "HP" };
 
     /// <summary>Value that is locked automatically once the game is found.</summary>
     public static readonly Dictionary<string, string> AutoLock = new() { ["Team Bar"] = "100" };
+
+    /// <summary>Helper cards that are not listed under VALUES (HP is needed by Instant Awakening).</summary>
+    public static readonly string[] HiddenLabels = { "HP" };
+
+    /// <summary>HP that Instant Awakening locks (the game needs HP 40 before Awakening can start).</summary>
+    public const string AwakeningHp = "40";
+
+    /// <summary>Order of the switch list. Titles not listed go last, in data order.</summary>
+    public static readonly string[] ToggleOrder =
+    {
+        "God Mode", "Unlimited Chakra", "Instant Awakening", "Unlimited Awakening",
+        "Team Tag", "Tag Switch", "Unlimited Kawarimi", "Unlimited Team Bar"
+    };
 
     private const string PlayerSig = "24 10 57 48 83 EC 20 48 8B 3D ?? ?? ?? ?? 33 F6 48 8B";
 
@@ -78,6 +91,17 @@ public static class GameData
                     InstructionOffset = 0,
                     OriginalBytes = "F3 0F 11 41 10",
                     Hotkey = "F2"
+                },
+                new CodePatch
+                {
+                    Label = "Unlimited Awakening",
+                    Pattern = "44 8D 42 FB ?? ?? ?? ?? ?? 85 C0 75 ?? 8B 4F 10 85 C9 78 49 F3 0F 2C 05 ?? ?? ?? ?? 2B C8 89 4F 10 85 C9 7F 38 48 8B CF 89 6F 10 E8 ?? ?? ?? ??",
+                    InstructionOffset = 4,
+                    OriginalBytes = "E8 16 45 05 00",
+                    Mode = "TreeOwner",
+                    BaseDisp = 16,
+                    OwnerOffset = 48,
+                    Hotkey = ""
                 }
             }
         },
