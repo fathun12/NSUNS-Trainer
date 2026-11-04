@@ -65,6 +65,9 @@ public partial class MainViewModel : ObservableObject
         LoadHotkeys();
         foreach (var t in Toggles) t.HotkeyEdited += OnHotkeyEdited;
 
+        LoadMultipliers();
+        foreach (var p in Patches.Where(p => p.ShowMultiplier)) p.MultiplierEdited += SaveMultipliers;
+
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += (_, _) => OnTick();
         _timer.Start();
@@ -173,6 +176,39 @@ public partial class MainViewModel : ObservableObject
             var lines = Toggles.Select(t => t.Title + "=" + t.HotkeyText);
             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(HotkeyFile)!);
             System.IO.File.WriteAllLines(HotkeyFile, lines);
+        }
+        catch { }
+    }
+
+    // ---------- damage multiplier settings ----------
+
+    private static readonly string MultiplierFile = System.IO.Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "NSUNS Trainer", "multiplier.txt");
+
+    private void LoadMultipliers()
+    {
+        try
+        {
+            if (!System.IO.File.Exists(MultiplierFile)) return;
+            foreach (var line in System.IO.File.ReadAllLines(MultiplierFile))
+            {
+                int eq = line.IndexOf('=');
+                if (eq <= 0) continue;
+                string title = line.Substring(0, eq);
+                string value = line.Substring(eq + 1).Trim();
+                foreach (var p in Patches) if (p.Title == title) p.LoadMultiplier(value);
+            }
+        }
+        catch { }
+    }
+
+    private void SaveMultipliers()
+    {
+        try
+        {
+            var lines = Patches.Where(p => p.ShowMultiplier).Select(p => p.Title + "=" + p.MultiplierText);
+            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(MultiplierFile)!);
+            System.IO.File.WriteAllLines(MultiplierFile, lines);
         }
         catch { }
     }

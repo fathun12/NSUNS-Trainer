@@ -25,7 +25,8 @@ public static class GameData
     /// <summary>Order of the switch list. Titles not listed go last, in data order.</summary>
     public static readonly string[] ToggleOrder =
     {
-        "God Mode", "Unlimited Chakra", "Instant Awakening", "Unlimited Awakening",
+        "God Mode", "Unlimited Chakra", "Damage Multiplier", "One Hit Kill",
+        "Instant Awakening", "Unlimited Awakening",
         "Team Tag", "Tag Switch", "Unlimited Kawarimi", "Unlimited Team Bar"
     };
 
@@ -101,6 +102,30 @@ public static class GameData
                     Mode = "TreeOwner",
                     BaseDisp = 16,
                     OwnerOffset = 48,
+                    Hotkey = ""
+                },
+                new CodePatch
+                {
+                    Label = "Damage Multiplier",
+                    Pattern = "?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? 76 ?? C7 41 10 00 00 00",
+                    InstructionOffset = 0,
+                    OriginalBytes = "F3 0F 5C C2 0F 2F C8",
+                    Mode = "TreeDamage",
+                    BaseDisp = 16,
+                    Multiplier = 2,
+                    Adjustable = true,
+                    Hotkey = ""
+                },
+                new CodePatch
+                {
+                    Label = "One Hit Kill",
+                    Pattern = "?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? 76 ?? C7 41 10 00 00 00",
+                    InstructionOffset = 0,
+                    OriginalBytes = "F3 0F 5C C2 0F 2F C8",
+                    Mode = "TreeDamage",
+                    BaseDisp = 16,
+                    Multiplier = 1000000000,
+                    Adjustable = false,
                     Hotkey = ""
                 }
             }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NsunsTrainer.Cave;
 using NsunsTrainer.Models;
@@ -40,6 +41,8 @@ public partial class PatchItem : ObservableObject, IToggleRow
         _patch = patch;
         _owner = owner;
         _hotkeyText = patch.Hotkey;
+        _k = (float)patch.Multiplier;
+        if (patch.Adjustable) _multiplierText = patch.Multiplier.ToString("0.##", CultureInfo.InvariantCulture);
         _session = session;
 
         foreach (var line in owner.Chains)
@@ -60,20 +63,43 @@ public partial class PatchItem : ObservableObject, IToggleRow
     public event Action? HotkeyEdited;
     partial void OnHotkeyTextChanged(string value) => HotkeyEdited?.Invoke();
     private bool IsTreeOwner => string.Equals(_patch.Mode, "TreeOwner", StringComparison.OrdinalIgnoreCase);
+    private bool IsTreeDamage => string.Equals(_patch.Mode, "TreeDamage", StringComparison.OrdinalIgnoreCase);
 
     private string ActiveText => IsTreeOwner
         ? "Active: effect timers of your whole side are frozen, enemies are not."
-        : "Active: your whole side is protected, enemies are not.";
+        : IsTreeDamage
+            ? (_patch.Adjustable
+                ? "Active: enemies take more damage, your side is unchanged."
+                : "Active: enemies go down in one hit, your side is unchanged.")
+            : "Active: your whole side is protected, enemies are not.";
 
     public string ActionText => "";
 
     public string Detail => IsTreeOwner
         ? "Effect timers (e.g. Awakening) of your whole side do not run out; enemy timers still do."
-        : "Your whole side is protected; enemies are not affected.";
+        : IsTreeDamage
+            ? (_patch.Adjustable
+                ? "Damage you deal to enemies is multiplied. Damage you take is not changed."
+                : "Every hit that damages an enemy kills it. Damage you take is not changed.")
+            : "Your whole side is protected; enemies are not affected.";
 
     /// <summary>Normal patches: the writer instruction. TreeOwner: one call instruction (E8 rel32).</summary>
     private bool TryAnalyzeAny(byte[] original, out CaveInfo? info, out string error)
     {
+        if (IsTreeDamage)
+        {
+            info = null;
+            error = "";
+            if (!original.AsSpan().SequenceEqual(CodeCave.DamageSiteBytes))
+            {
+                error = "TreeDamage needs the 7 bytes of subss xmm0,xmm2 followed by comiss xmm1,xmm0.";
+                return false;
+            }
+
+            info = new CaveInfo(1, _patch.BaseDisp, original.Length);
+            return true;
+        }
+
         if (!IsTreeOwner) return CodeCave.TryAnalyze(original, out info, out error);
 
         info = null;
@@ -100,6 +126,68 @@ public partial class PatchItem : ObservableObject, IToggleRow
 
     public void HotkeyToggle() => IsOn = !IsOn;
 
+    // ---------- damage multiplier (TreeDamage, adjustable patch only) ----------
+
+    public bool ShowMultiplier => _patch.Adjustable;
+    [ObservableProperty] private string _multiplierText = "";
+    [ObservableProperty] private string _multiplierNote = "";
+    public event Action? MultiplierEdited;
+
+    private float _k;         // factor the cave should use (guarded by _lock)
+    private float _kWritten;  // factor currently in the cave data block (guarded by _lock)
+
+    private float CurrentK { get { lock (_lock) return _k; } }
+
+    partial void OnMultiplierTextChanged(string value)
+    {
+        if (!ShowMultiplier) return;
+
+        if (TryParseMultiplier(value, out float k))
+        {
+            lock (_lock) _k = k;
+            MultiplierNote = "";
+            MultiplierEdited?.Invoke();
+        }
+        else
+        {
+            MultiplierNote = "Enter a number from 1 to 10 (still x" + CurrentK.ToString("0.##", CultureInfo.InvariantCulture) + ").";
+        }
+    }
+
+    private static bool TryParseMultiplier(string? text, out float k)
+    {
+        k = 0;
+        string clean = (text ?? "").Trim().Replace(',', '.');
+        if (!double.TryParse(clean, NumberStyles.Float, CultureInfo.InvariantCulture, out double d)) return false;
+        if (double.IsNaN(d) || double.IsInfinity(d) || d < 1 || d > 10) return false;
+        k = (float)d;
+        return true;
+    }
+
+    /// <summary>Used by the settings loader (MainViewModel) before the edit event is hooked up.</summary>
+    public void LoadMultiplier(string text)
+    {
+        if (ShowMultiplier && TryParseMultiplier(text, out _)) MultiplierText = text.Trim();
+    }
+
+    /// <summary>Background thread: puts a changed factor into the running cave (works while the patch is on).</summary>
+    private void WriteMultiplierIfChanged(MemoryWriter writer, ulong cave)
+    {
+        float k;
+        float written;
+        int dataOffset;
+        lock (_lock)
+        {
+            k = _k;
+            written = _kWritten;
+            dataOffset = _dataOffset;
+        }
+        if (dataOffset == 0 || k == written) return;
+
+        if (writer.Write(cave + (ulong)dataOffset + 8, BitConverter.GetBytes(k)))
+            lock (_lock) _kWritten = k;
+    }
+
     // ---------- background thread: keeps the side slots correct ----------
 
     public void Tick()
@@ -121,6 +209,8 @@ public partial class PatchItem : ObservableObject, IToggleRow
 
         var tree = ComputeTreeSlots(memory);
         if (tree is null) return;
+
+        if (IsTreeDamage) WriteMultiplierIfChanged(writer, cave);
 
         ulong[]? prev;
         lock (_lock) prev = _lastTree;
@@ -189,6 +279,8 @@ public partial class PatchItem : ObservableObject, IToggleRow
 
         uint skip = BitConverter.ToUInt32(bytes, 0);
         uint run = BitConverter.ToUInt32(bytes, 4);
+        if (IsTreeDamage) return $" | scaled {skip}x, left alone {run}x";
+
         return IsTreeOwner
             ? $" | forced {skip}x, left alone {run}x"
             : $" | skipped {skip}x, ran {run}x";
@@ -315,6 +407,12 @@ public partial class PatchItem : ObservableObject, IToggleRow
             if (target == cave) return PatchState.Patched;
         }
 
+        if (IsTreeDamage && now[0] == 0xE9)
+        {
+            detail = "Another damage patch is active here (Damage Multiplier or One Hit Kill), or one was left over from an earlier session. Turn the other one off, or restart the game.";
+            return PatchState.Mismatch;
+        }
+
         detail = $"The bytes at the code location differ (found {CodePatch.ToHex(now)}, expected {CodePatch.ToHex(original)}). " +
                  "The game was updated, or a patch from a previous trainer session is still in place (restart the game).";
         return PatchState.Mismatch;
@@ -422,7 +520,9 @@ public partial class PatchItem : ObservableObject, IToggleRow
         }
         else
         {
-            code = CodeCave.BuildTreeDiag(original, info, SideTree.MaxNodes, cave, site, out slotOffset, out dataOffset);
+            code = IsTreeDamage
+                ? CodeCave.BuildTreeDamage(original, info, SideTree.MaxNodes, CurrentK, cave, site, out slotOffset, out dataOffset)
+                : CodeCave.BuildTreeDiag(original, info, SideTree.MaxNodes, cave, site, out slotOffset, out dataOffset);
         }
         for (int i = 0; i < tree.Length; i++)
             BitConverter.GetBytes(tree[i]).CopyTo(code, slotOffset + i * 8);
@@ -442,6 +542,7 @@ public partial class PatchItem : ObservableObject, IToggleRow
             _caveAddr = cave;
             _slotOffset = slotOffset;
             _dataOffset = dataOffset;
+            if (IsTreeDamage) _kWritten = BitConverter.ToSingle(code, dataOffset + 8);
             _lastTree = tree;
         }
         return "";
