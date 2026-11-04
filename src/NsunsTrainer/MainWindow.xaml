@@ -80,52 +80,8 @@
                 <!-- HOTKEY ROWS -->
                 <TextBlock Text="PATCHES" Style="{StaticResource SectionLabel}" Margin="0,26,0,8" />
 
-                <!-- Lock-only values (Unlimited Team Bar) -->
-                <ItemsControl ItemsSource="{Binding SwitchFeatures}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Style="{StaticResource Row}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="76" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <Border Grid.Column="0" Width="3" Margin="0,0,12,0">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="Transparent" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding IsFrozen}" Value="True">
-                                                        <Setter Property="Background" Value="{StaticResource AccentBrush}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                    </Border>
-
-                                    <ui:TextBox Grid.Column="1" Width="64" HorizontalAlignment="Left" VerticalAlignment="Center" Padding="4,4" FontFamily="{StaticResource MonoFont}" FontSize="12" TextAlignment="Center" ToolTip="Hotkey, for example F6 or Ctrl+F6. Click elsewhere to save." Text="{Binding HotkeyText, UpdateSourceTrigger=LostFocus}" />
-
-                                    <StackPanel Grid.Column="2" Margin="4,0,12,0">
-                                        <TextBlock Text="{Binding Title}" Style="{StaticResource RowTitle}" />
-                                        <TextBlock Text="{Binding StatusText}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
-                                        <TextBlock Text="{Binding ActionText}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
-                                        <TextBlock Text="{Binding HotkeyStatus}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
-                                    </StackPanel>
-
-                                    <ui:ToggleSwitch Grid.Column="3"
-                                                     VerticalAlignment="Center"
-                                                     IsChecked="{Binding IsFrozen, Mode=TwoWay}" />
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!-- Code patches -->
-                <ItemsControl ItemsSource="{Binding Patches}">
+                <!-- All switches, in the order of GameData.ToggleOrder -->
+                <ItemsControl ItemsSource="{Binding Toggles}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border Style="{StaticResource Row}">
@@ -155,6 +111,7 @@
                                     <StackPanel Grid.Column="2" Margin="4,0,12,0">
                                         <TextBlock Text="{Binding Title}" Style="{StaticResource RowTitle}" />
                                         <TextBlock Text="{Binding StatusText}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
+                                        <TextBlock Text="{Binding ActionText}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
                                         <TextBlock Text="{Binding HotkeyStatus}" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
                                     </StackPanel>
 

@@ -11,6 +11,15 @@ public sealed class CodePatch
     public string OriginalBytes { get; set; } = "";
     public string Hotkey { get; set; } = "";
 
+    /// <summary>"Tree" (default) or "TreeOwner" (hook on a call: effect timers of the player's side are skipped).</summary>
+    public string Mode { get; set; } = "Tree";
+
+    /// <summary>TreeOwner only: displacement of the player's value card instruction, used to find the player's node.</summary>
+    public int BaseDisp { get; set; }
+
+    /// <summary>TreeOwner only: offset of the effect owner pointer inside a character node.</summary>
+    public int OwnerOffset { get; set; }
+
     public static string ToHex(IEnumerable<byte> bytes) => string.Join(' ', bytes.Select(b => b.ToString("X2")));
 
     public static bool TryParseBytes(string? text, out byte[] bytes)

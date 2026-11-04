@@ -11,7 +11,7 @@ namespace NsunsTrainer.ViewModels;
 /// One code patch (tree mode). The game instruction that writes the value is redirected to a cave
 /// that skips the write for every character on the player's side and runs it for enemies.
 /// </summary>
-public partial class PatchItem : ObservableObject
+public partial class PatchItem : ObservableObject, IToggleRow
 {
     private readonly CodePatch _patch;
     private readonly SavedAddress _owner;
@@ -49,7 +49,7 @@ public partial class PatchItem : ObservableObject
 
         string error = "";
         if (CodePatch.TryParseBytes(patch.OriginalBytes, out var original) &&
-            CodeCave.TryAnalyze(original, out var info, out error))
+            TryAnalyzeAny(original, out var info, out error))
             _cave = info;
         else
             _caveError = error.Length > 0 ? error : "The patch bytes are invalid.";
@@ -59,7 +59,34 @@ public partial class PatchItem : ObservableObject
     [ObservableProperty] private string _hotkeyText = "";
     public event Action? HotkeyEdited;
     partial void OnHotkeyTextChanged(string value) => HotkeyEdited?.Invoke();
-    public string Detail => "Your whole side is protected; enemies are not affected.";
+    private bool IsTreeOwner => string.Equals(_patch.Mode, "TreeOwner", StringComparison.OrdinalIgnoreCase);
+
+    private string ActiveText => IsTreeOwner
+        ? "Active: effect timers of your whole side are frozen, enemies are not."
+        : "Active: your whole side is protected, enemies are not.";
+
+    public string ActionText => "";
+
+    public string Detail => IsTreeOwner
+        ? "Effect timers (e.g. Awakening) of your whole side do not run out; enemy timers still do."
+        : "Your whole side is protected; enemies are not affected.";
+
+    /// <summary>Normal patches: the writer instruction. TreeOwner: one call instruction (E8 rel32).</summary>
+    private bool TryAnalyzeAny(byte[] original, out CaveInfo? info, out string error)
+    {
+        if (!IsTreeOwner) return CodeCave.TryAnalyze(original, out info, out error);
+
+        info = null;
+        error = "";
+        if (original.Length != 5 || original[0] != 0xE8)
+        {
+            error = "TreeOwner needs a single call instruction (5 bytes starting with E8).";
+            return false;
+        }
+
+        info = new CaveInfo(1, _patch.BaseDisp, 5);
+        return true;
+    }
 
     [ObservableProperty] private bool _isOn;
     [ObservableProperty] private string _statusText = "Waiting for the game...";
@@ -129,6 +156,21 @@ public partial class PatchItem : ObservableObject
 
         var slots = new ulong[SideTree.MaxNodes];
         int count = Math.Min(nodes.Count, slots.Length);
+
+        if (IsTreeOwner)
+        {
+            // Owner mode: each slot holds the effect owner pointer of one character; unused slots hold an impossible value.
+            Array.Fill(slots, ulong.MaxValue);
+            for (int i = 0; i < count; i++)
+            {
+                var b = memory.Read(nodes[i] + (ulong)_patch.OwnerOffset, 8);
+                if (b is null) continue;
+                ulong v = BitConverter.ToUInt64(b, 0);
+                if (v > 0x10000) slots[i] = v;
+            }
+            return slots;
+        }
+
         for (int i = 0; i < count; i++)
             slots[i] = nodes[i] + SideTree.BaseFromNode;
         if (count > 2) Array.Sort(slots, 1, count - 1);
@@ -147,7 +189,9 @@ public partial class PatchItem : ObservableObject
 
         uint skip = BitConverter.ToUInt32(bytes, 0);
         uint run = BitConverter.ToUInt32(bytes, 4);
-        return $" | skipped {skip}x, ran {run}x";
+        return IsTreeOwner
+            ? $" | forced {skip}x, left alone {run}x"
+            : $" | skipped {skip}x, ran {run}x";
     }
 
     // ---------- reading (1 second timer) ----------
@@ -203,7 +247,7 @@ public partial class PatchItem : ObservableObject
                 break;
             case PatchState.Patched:
                 _active = true;
-                StatusText = "Active: your whole side is protected, enemies are not." + Diagnostic(memory);
+                StatusText = ActiveText + Diagnostic(memory);
                 SetOn(true);
                 break;
             default:
@@ -285,7 +329,7 @@ public partial class PatchItem : ObservableObject
         string error = Apply(value);
         if (error.Length == 0)
         {
-            StatusText = value ? "Active: your whole side is protected, enemies are not." : "Patch turned off.";
+            StatusText = value ? ActiveText : "Patch turned off.";
             return;
         }
 
@@ -367,7 +411,19 @@ public partial class PatchItem : ObservableObject
             cave = allocated.Value;
         }
 
-        var code = CodeCave.BuildTreeDiag(original, info, SideTree.MaxNodes, cave, site, out int slotOffset, out int dataOffset);
+        byte[] code;
+        int slotOffset, dataOffset;
+        if (IsTreeOwner)
+        {
+            if (original.Length != 5 || original[0] != 0xE8) return "The patch bytes are not a call (E8 + 4 bytes).";
+            long callRel = BitConverter.ToInt32(original, 1);
+            ulong callTarget = unchecked((ulong)((long)site + 5 + callRel));
+            code = CodeCave.BuildCallOwner(callTarget, SideTree.MaxNodes, cave, site, out slotOffset, out dataOffset);
+        }
+        else
+        {
+            code = CodeCave.BuildTreeDiag(original, info, SideTree.MaxNodes, cave, site, out slotOffset, out dataOffset);
+        }
         for (int i = 0; i < tree.Length; i++)
             BitConverter.GetBytes(tree[i]).CopyTo(code, slotOffset + i * 8);
 

@@ -15,13 +15,16 @@ public partial class MainViewModel : ObservableObject
     private readonly DispatcherTimer _timer;
     private readonly FeatureItem[] _featureArray;
     private readonly PatchItem[] _patchArray;
+    private readonly InstantAwakeningItem _instant;
     private HotkeyService? _hotkeys;
 
     public TrainerSession Session { get; } = new();
     public ObservableCollection<FeatureItem> Features { get; } = new();
     public ObservableCollection<PatchItem> Patches { get; } = new();
-    public IEnumerable<FeatureItem> ValueFeatures => Features.Where(f => !f.IsSwitch);
-    public IEnumerable<FeatureItem> SwitchFeatures => Features.Where(f => f.IsSwitch);
+    public IEnumerable<FeatureItem> ValueFeatures => Features.Where(f => !f.IsSwitch && !f.IsHidden);
+
+    /// <summary>All switch rows (patches, Unlimited Team Bar, Instant Awakening) in the order of GameData.ToggleOrder.</summary>
+    public ObservableCollection<IToggleRow> Toggles { get; } = new();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasMessage))]
@@ -41,7 +44,7 @@ public partial class MainViewModel : ObservableObject
             if (GameData.FeatureLabels.Contains(address.Label))
             {
                 GameData.AutoLock.TryGetValue(address.Label, out var auto);
-                Features.Add(new FeatureItem(address, Session, auto));
+                Features.Add(new FeatureItem(address, Session, auto) { IsHidden = GameData.HiddenLabels.Contains(address.Label) });
             }
 
             foreach (var codePatch in address.CodePatches)
@@ -50,10 +53,17 @@ public partial class MainViewModel : ObservableObject
 
         _featureArray = Features.ToArray();
         _patchArray = Patches.ToArray();
+        _instant = new InstantAwakeningItem(Features, Patches);
+
+        var rows = new List<IToggleRow>();
+        rows.AddRange(Patches);
+        rows.AddRange(Features.Where(f => f.IsSwitch));
+        rows.Add(_instant);
+        foreach (var row in rows.OrderBy(r => OrderOf(r.Title)))
+            Toggles.Add(row);
 
         LoadHotkeys();
-        foreach (var f in Features) f.HotkeyEdited += OnHotkeyEdited;
-        foreach (var p in Patches) p.HotkeyEdited += OnHotkeyEdited;
+        foreach (var t in Toggles) t.HotkeyEdited += OnHotkeyEdited;
 
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += (_, _) => OnTick();
@@ -109,21 +119,19 @@ public partial class MainViewModel : ObservableObject
     {
         _hotkeys = hotkeys;
 
-        foreach (var feature in Features)
+        foreach (var row in Toggles)
         {
-            if (string.IsNullOrWhiteSpace(feature.HotkeyText)) continue;
+            if (string.IsNullOrWhiteSpace(row.HotkeyText)) continue;
 
-            string? error = _hotkeys.Register(feature.HotkeyText, feature.HotkeyToggle);
-            feature.HotkeyStatus = error is null ? $"Hotkey: {feature.HotkeyText}" : $"Hotkey {feature.HotkeyText}: {error}";
+            string? error = _hotkeys.Register(row.HotkeyText, row.HotkeyToggle);
+            row.HotkeyStatus = error is null ? $"Hotkey: {row.HotkeyText}" : $"Hotkey {row.HotkeyText}: {error}";
         }
+    }
 
-        foreach (var patch in Patches)
-        {
-            if (string.IsNullOrWhiteSpace(patch.HotkeyText)) continue;
-
-            string? error = _hotkeys.Register(patch.HotkeyText, patch.HotkeyToggle);
-            patch.HotkeyStatus = error is null ? $"Hotkey: {patch.HotkeyText}" : $"Hotkey {patch.HotkeyText}: {error}";
-        }
+    private static int OrderOf(string title)
+    {
+        int i = Array.IndexOf(GameData.ToggleOrder, title);
+        return i < 0 ? int.MaxValue : i;
     }
 
     // ---------- hotkey editing ----------
@@ -135,8 +143,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (_hotkeys is null) return;
 
-        foreach (var f in Features) f.HotkeyStatus = "";
-        foreach (var p in Patches) p.HotkeyStatus = "";
+        foreach (var t in Toggles) t.HotkeyStatus = "";
         _hotkeys.UnregisterAll();
         AttachHotkeys(_hotkeys);
         SaveHotkeys();
@@ -153,8 +160,7 @@ public partial class MainViewModel : ObservableObject
                 if (eq <= 0) continue;
                 string title = line.Substring(0, eq);
                 string key = line.Substring(eq + 1).Trim();
-                foreach (var f in Features) if (f.Title == title) f.HotkeyText = key;
-                foreach (var p in Patches) if (p.Title == title) p.HotkeyText = key;
+                foreach (var t in Toggles) if (t.Title == title) t.HotkeyText = key;
             }
         }
         catch { }
@@ -164,8 +170,7 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            var lines = Features.Where(f => f.IsSwitch).Select(f => f.Title + "=" + f.HotkeyText)
-                .Concat(Patches.Select(p => p.Title + "=" + p.HotkeyText));
+            var lines = Toggles.Select(t => t.Title + "=" + t.HotkeyText);
             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(HotkeyFile)!);
             System.IO.File.WriteAllLines(HotkeyFile, lines);
         }
@@ -177,6 +182,7 @@ public partial class MainViewModel : ObservableObject
     /// <summary>Puts every patch back to the original bytes. Called when the trainer closes.</summary>
     public void Shutdown()
     {
+        if (_instant.IsOn) _instant.IsOn = false;
         foreach (var patch in Patches)
             patch.Restore();
     }
@@ -193,6 +199,7 @@ public partial class MainViewModel : ObservableObject
             feature.Update(memory);
         foreach (var patch in Patches)
             patch.Update(memory);
+        _instant.Refresh();
     }
 
     private void TryAutoConnect()
