@@ -1,6 +1,6 @@
 # SPEC: NSUNS Trainer
 
-> Dokumen serah-terima untuk sesi AI berikutnya. BACA SELURUHNYA sebelum menulis apa pun. Terakhir diperbarui: 3 Nov 2026.
+> Dokumen serah-terima untuk sesi AI berikutnya. BACA SELURUHNYA sebelum menulis apa pun. Terakhir diperbarui: 4 Nov 2026 (Unlimited Awakening dan Instant Awakening, urutan daftar baru, rilis v1.1.1; baca bagian 9).
 > Proyek ini MANDIRI. Proyek lain milik user (Ramreader, `D:\Projects\Ramreader`) punya SPEC.md sendiri. JANGAN mengedit SPEC Ramreader kecuali user menyuruh.
 
 ## 0. Prompt pembuka untuk sesi baru
@@ -30,7 +30,7 @@ User berbahasa Indonesia, awam, mudah frustrasi. HURUF KAPITAL SEMUA = marah kar
 11. **Jujur.** Pisahkan jelas yang terbukti dari layar user dan yang tebakan (beri label). Jangan mencatat "terbukti" sebelum user melapor. Laporan user dari pengalamannya sendiri adalah fakta; jangan dibantah.
 12. **Baca pesan sampai habis dan jangan mengubah arti kalimat user.** Salah baca = frustrasi.
 13. **Jangan pernah menghapus atau menganggap tak berfungsi apa pun hasil kerja user** (alamat, patch, kartu). Team Bar dan Unlimited Team Bar berfungsi. AI lama pernah salah menganggap Team Bar tidak jalan dan hendak menghapusnya; user marah besar. Hapus hanya jika user sendiri yang menyuruh.
-14. **Jangan memakai Mode Nop** (NOP polos membuat musuh ikut kebal). Trainer ini hanya memakai Mode Tree.
+14. **Jangan memakai Mode Nop** (NOP polos membuat musuh ikut kebal). Trainer ini hanya memakai Mode Tree dan Mode TreeOwner (hook pada call, khusus Unlimited Awakening).
 15. **Mencari nilai atau alamat BARU** (fitur baru, game di-update) dilakukan user dengan **RAMREADER-nya** (`D:\Projects\Ramreader`: Cari Nilai, Jalur Stabil, Penulis Kode, Buat Patch). JANGAN menyuruh Cheat Engine dan jangan menebak alamat. NSUNS Trainer hanya membungkus hasil yang sudah ditemukan; alamat baru dimasukkan ke `GameData.cs` dari sesi Ramreader (`%AppData%\Ramreader\sessions\NSUNSC.json`). Jangan mengedit JSON itu lewat ConvertFrom/To-Json.
 
 ## 3. Lingkungan
@@ -43,19 +43,19 @@ Windows 11, VS Code, PowerShell 5.1, .NET SDK 10.0.x, folder `D:\Projects\NSUNS 
 D:\Projects\NSUNS Trainer\
   NsunsTrainer.slnx   .gitignore   SPEC.md
   src\NsunsTrainer\    (namespace NsunsTrainer.*)
-    Models\    ScanValueType, ModuleInfo, MemoryRegion, SignatureRef, CodePatch (+Hotkey), SavedAddress
+    Models\    ScanValueType, ModuleInfo, MemoryRegion, SignatureRef, CodePatch (+Hotkey, Mode, BaseDisp, OwnerOffset), SavedAddress
     Native\    NativeMethods, ProcessMemory (baca), MemoryWriter (satu-satunya yang menulis ke game)
     Scanning\  AobPattern, AobScanner, SignatureResolver, ValueCodec
     Pointers\  PointerChain, PointerVerifier, AddressResolver (jalur berurutan, lalu signature)
-    Cave\      CodeCave (BuildTreeDiag), SideTree, CodePatchLocator
+    Cave\      CodeCave (BuildTreeDiag, BuildCallOwner), SideTree, CodePatchLocator
     Data\      GameData (SEMUA data NSUNSC tertanam)
     Services\  HotkeyService, TrainerSession
-    ViewModels\ FeatureItem (kartu nilai), PatchItem (patch Tree), MainViewModel
+    ViewMod    ViewModels\ FeatureItem (kartu nilai), PatchItem (patch Tree dan TreeOwner), InstantAwakeningItem, IToggleRow (antarmuka baris switch), MainViewModelels\ FeatureItem (kartu nilai), PatchItem (patch Tree), MainViewModel
 ```
 
 Cara kerja patch (jangan diubah tanpa alasan kuat): instruksi penulis (HP, chakra, gauge, Kawarimi) dipakai bersama tim dan musuh. Patch mengganti instruksi dengan `jmp` ke code cave. Cave membandingkan register basis objek penulis dengan hingga 12 slot (alamat karakter satu sisi pemain); sama = lewati penulisan, beda = jalankan instruksi asli. Sisi pemain ditentukan Mode Tree: tiap karakter punya simpul dengan tiga penunjuk (+0x00, +0x08, +0x10) yang saling tersambung timbal balik; awal simpul = nilai register basis dikurangi 0x28. `SideTree.Collect` menelusurinya dari objek pemain (alamat nilai pemain dikurangi displacement instruksi), thread latar memperbarui slot tiap 10 ms. Penanda 12 byte (Mode Team) gagal di mirror match, jangan dipakai.
 
-Isi `GameData.cs`: proses `NSUNSC`; `ExpectedModuleSize` 166223872; kartu nilai: **Gold Ticket** (Int32) dan **Team Bar** (Float, tampil sebagai baris patch "Unlimited Team Bar", hotkey default F5, toggle = kunci di 100; TIDAK lagi nyala otomatis, user tidak mau). Patch (semua Mode Tree, hotkey): **God Mode** F2 (+94BAE2 `F3 0F 11 41 10`), **Unlimited Chakra** F3 (+94BA22 `F3 0F 11 41 18`), **Team Tag** F4 (+94BB7A `F3 0F 11 40 2C`, summon), **Tag Switch** F7 (+94C3B6 `F3 0F 11 70 2C`), **Unlimited Kawarimi** F9 (+94C09E `F3 0F 11 51 20`). Kartu alamat "Kawarimi" di data = jalur KAWARIMI 2 dari sesi Ramreader (memang yang dipakai) dan hanya pemilik alamat untuk patch. Cooldown (+21BDC30) jalan buntu, tidak ikut. Lokasi kode dicari lewat signature di modul utama (sekali per proses). Nilai hasil Ramreader tervalidasi di NSUNSC; fitur lain selain yang tercantum di atas tidak ada.
+Isi `GameData.cs`: proses `NSUNSC`; `ExpectedModuleSize` 166223872; kartu nilai: **Gold Ticket** (Int32) dan **Team Bar** (Float, tampil sebagai baris patch "Unlimited Team Bar", hotkey default F5, toggle = kunci di 100; TIDAK lagi nyala otomatis, user tidak mau). Patch (semua Mode Tree, hotkey): **God Mode** F2 (+94BAE2 `F3 0F 11 41 10`), **Unlimited Chakra** F3 (+94BA22 `F3 0F 11 41 18`), **Team Tag** F4 (+94BB7A `F3 0F 11 40 2C`, summon), **Tag Switch** F7 (+94C3B6 `F3 0F 11 70 2C`), **Unlimited Kawarimi** F9 (+94C09E `F3 0F 11 51 20`). Kartu alamat "Kawarimi" di data = jalur KAWARIMI 2 dari sesi Ramreader (memang yang dipakai) dan hanya pemilik alamat untuk patch. Cooldown (+21BDC30) jalan buntu, tidak ikut. Lokasi kode dicari lewat signature di modul utama (sekali per proses). Nilai hasil Ramreader tervalidasi di NSUNSC; fitur lain selain yang tercantum di atas dan di bagian 9 tidak ada. Sejak 4 Nov 2026 ada kartu nilai HP (tersembunyi, tidak tampil di VALUES; dipakai Instant Awakening untuk Set dan Lock) dan patch **Unlimited Awakening** (Mode TreeOwner) di dalam kartu HP. Jadi "semua patch Mode Tree" di atas berlaku untuk semua kecuali Unlimited Awakening. Detail di bagian 9.
 
 ## 5. Status dan langkah
 
@@ -70,12 +70,14 @@ Daftar langkah pribadi user (posisi disebut tiap pesan):
 | R1-4e | Tampilan datar (AppStyles.xaml, App.xaml, MainWindow), hotkey bisa diubah di baris dan tersimpan di %AppData%\NSUNS Trainer\hotkeys.txt, pesan error diseragamkan ke Inggris | SUDAH (build lolos, tampilan dilihat user) |
 | R1-4f | app.manifest requireAdministrator, AssemblyName "NSUNS Trainer", publish single-file self-contained win-x64 (folder publish, tidak masuk git) | SUDAH (exe tes: minta Administrator, tampilan sama, tersambung ke NSUNSC, laporan user) |
 | Ikon | Spiral kotak #E4572E di atas #141211, Assets\NsunsTrainer.ico, dipasang lewat ApplicationIcon (gaya acuan: gambar user, disetujui, jadi standar semua trainer, lihat DESIGN.md bagian 10) | SUDAH dipasang di exe (tampilan ikon belum dilaporkan user) |
+| W1-W6 | Unlimited Awakening (TreeOwner) dan Instant Awakening, daftar switch satu urutan (IToggleRow, ToggleOrder), kartu HP tersembunyi | SUDAH (build lolos; semua fungsi trainer berjalan, tanpa error dan tanpa nilai tidak sesuai, dilaporkan user 4 Nov 2026; tes tiga kondisi tidak dirinci). Lihat bagian 9 |
+| Rilis | v1.0.0 (exe 64,7 MB) dan v1.1.1 (exe 61,1 MB, commit 874de3c) terbit di GitHub (screenshot user) | SUDAH. Lihat bagian 9 |
 
 Acuan tampilan: `D:\Projects\Ramreader\src\Ramreader.Trainer\MainWindow.xaml` dan `Themes\AppStyles.xaml` (WPF-UI, Mica, dark, kartu `FeatureItem` dan `PatchItem` lewat DataTemplate). Minta file itu lewat perintah clipboard (aturan 8) sebelum menulis XAML. Kontrol WPF biasa tidak mengikuti tema gelap; pakai kontrol WPF-UI (`ui:Button`, `ui:TextBox`, `ui:ToggleSwitch`). Proyek WPF tidak memuat `System.IO` otomatis.
 
 ## 6. Yang BELUM terbukti (jangan dicatat terbukti sebelum user melapor)
 
-NSUNS Trainer sudah dijalankan: tersambung ke NSUNSC dan tampil benar (laporan user, 3 Nov 2026). Uji tiap patch di match (tim kebal, musuh kena) belum dilaporkan rinci. Logika yang disalin dari Ramreader terbukti di sana, tetapi versi mandiri ini baru lolos build. Uji setelah R1-4e: tiap patch (tim kebal, musuh kena), Team Bar auto-lock, Gold Ticket, hotkey, di 3 kondisi (match sekarang, rematch, ganti karakter lalu match baru).
+NSUNS Trainer sudah dijalankan: tersambung ke NSUNSC dan tampil benar (laporan user, 3 Nov 2026). Pada 4 Nov 2026 user melaporkan semua fungsi trainer berjalan (setelah penambahan Awakening), tanpa error dan tanpa nilai tidak sesuai; rincian per patch dan per kondisi tetap tidak diberikan, jadi tiga kondisi di bawah masih dianggap belum terbukti rinci. Logika yang disalin dari Ramreader terbukti di sana, tetapi versi mandiri ini baru lolos build. Uji setelah R1-4e: tiap patch (tim kebal, musuh kena), Team Bar auto-lock, Gold Ticket, hotkey, di 3 kondisi (match sekarang, rematch, ganti karakter lalu match baru).
 
 ## 7. Penutup tiap pekerjaan
 
@@ -89,4 +91,23 @@ Akhiri dengan: **"MASIH ADA KERJA: <apa>"** atau **"SUDAH SELESAI"**. Selalu seb
 - Ada file `README.md`, `DESIGN.md`, `LICENSE` (gratis, tidak boleh dijual, berlaku untuk exe dan ikon, hak cipta MFNiam / fathun12).
 - Tes lewat exe di folder publish (butuh Administrator). `dotnet run` dari terminal biasa gagal karena manifest.
 - Build ulang gagal "access denied" kalau exe di publish masih berjalan: tutup dulu.
-- Berikutnya: release GitHub v1.0.0 (user membuatnya sendiri di web), lalu ikon di title bar jendela bila user minta.
+- Berikutnya: release GitHub v1.0.0 (user membuatnya sendiri di web), lalu ikon di title bar jendela bila user minta. (v1.0.0 sudah terbit; lihat bagian 9.)
+
+## 9. Catatan sesi 4 Nov 2026 (Awakening dan rilis v1.1.1)
+
+Label: FAKTA = laporan atau screenshot user; DUGAAN = belum terbukti; TIDAK TAHU = jangan dianggap benar.
+
+**Yang ditambahkan (build lolos, dilaporkan user).**
+- **Unlimited Awakening** (hotkey bawaan kosong): patch di kartu HP, Mode "TreeOwner", BaseDisp 16, OwnerOffset 48, hook pada `call` di +97B965 (`E8 16 45 05 00`, InstructionOffset 4, pola AOB dari JSON Ramreader). Cave `CodeCave.BuildCallOwner` memanggil target asli; bila hasilnya 0 dan `[rdi+18h]` sama dengan salah satu slot (penunjuk pemilik efek tiap karakter sisi pemain, `[simpul+0x30]`), hasil dipaksa 1 sehingga game melewati pengurangan timer. Timer efek sisi pemain tidak habis, efek musuh tetap habis. Asal logika dan bukti di SPEC Ramreader bagian 2o dan 2q.
+- **Instant Awakening** (hotkey bawaan kosong): satu switch, bukan patch game. Dinyalakan: God Mode dimatikan bila menyala; HP diset 40 lalu dikunci; Unlimited Awakening dinyalakan. Dimatikan: kunci HP dilepas dan Unlimited Awakening mati; God Mode TIDAK dinyalakan lagi. Tiap detik, bila switch menyala tetapi kunci HP atau patch mati atau gagal, semuanya dilepas otomatis. Pemicu Awakening di game tetap ditekan user sendiri. Konstanta HP = `GameData.AwakeningHp` ("40").
+- **Daftar switch satu urutan** (`GameData.ToggleOrder`): God Mode, Unlimited Chakra, Instant Awakening, Unlimited Awakening, Team Tag, Tag Switch, Unlimited Kawarimi, Unlimited Team Bar. Judul yang tidak terdaftar dibaris terakhir. `MainViewModel.Toggles` (IToggleRow) menggantikan daftar Switch dan Patches lama di MainWindow.xaml; hotkey lama tetap dimuat dari hotkeys.txt per judul.
+- **Kartu HP tersembunyi**: `GameData.HiddenLabels = {"HP"}`, `FeatureItem.IsHidden`, tidak tampil di VALUES tetapi tetap di-update dan bisa dikunci.
+- Berkas baru: `ViewModels\IToggleRow.cs`, `ViewModels\InstantAwakeningItem.cs`. `CodePatch` punya field Mode (bawaan "Tree"), BaseDisp, OwnerOffset.
+
+**FAKTA (laporan user, 4 Nov 2026).** Semua fungsi trainer berjalan, tidak ada error, tidak ada nilai tidak sesuai. Screenshot Trainer: Unlimited Awakening aktif dengan diagnostik "forced 12800x, left alone 900x", Instant Awakening aktif ("HP: Value locked at 40").
+
+**Belum terbukti.** Tiga kondisi (match sekarang, rematch, ganti karakter lalu match baru) untuk Awakening tidak dirinci user. Tes exe berdiri sendiri belum dilaporkan (lihat rilis di bawah). TIDAK TAHU: apakah syarat Awakening persis HP 40 atau di bawah 40 (konstanta bisa diubah); apakah sub-karakter punya penunjuk pemilik di +0x30 (user melaporkan tim ikut tanpa batas, belum dirinci); arti kalimat user "darah diset tapi tetap god mode" (tidak dimasukkan ke deskripsi rilis).
+
+**Rilis.** Folder rilis adalah `D:\Projects\NSUNS Trainer\publish` (di dalam proyek, tidak masuk git). JANGAN membuat folder rilis baru di luar proyek (AI sesi ini membuat `NSUNS Trainer-dist` dan `public`, user marah; keduanya dihapus). Perintah publish yang menghasilkan exe 61,1 MB: `dotnet publish src\NsunsTrainer -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:Version=$ver -o publish`. Tanpa `EnableCompressionInSingleFile` exe 134 MB. Opsi publish asli v1.0.0 (64,7 MB) tidak diketahui. `NsunsTrainer.csproj` masih `<Version>1.0.0</Version>`; versi rilis datang dari `-p:Version`. Folder publish juga berisi beberapa .dll dan .pdb di samping exe; hanya `NSUNS Trainer.exe` yang diunggah ke GitHub. DUGAAN: opsi kompresi membuat library bawaan WPF tidak tertanam; BELUM dibuktikan bahwa exe berjalan sendirian tanpa .dll itu (tes: salin exe ke folder kosong, jalankan sebagai Administrator). Release v1.1.0 sempat berisi exe 134 MB lalu diganti 61,1 MB; v1.1.1 terbit sebagai Latest (screenshot user). Commit "chore: revert gitignore" sempat memasukkan `.gitignore.bak`; user menghapus berkasnya dan commit penghapusannya belum dilaporkan.
+
+**Pelajaran.** Jangan membuat folder atau berkas baru di luar struktur proyek yang sudah ada tanpa bertanya; baca dulu SPEC dan struktur folder (aturan 5).
