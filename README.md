@@ -1,10 +1,23 @@
+<div align="center">
+
 # NSUNS Trainer
 
-A small, standalone trainer for **Naruto x Boruto: Ultimate Ninja Storm Connections** (`NSUNSC`).
+**A small, standalone trainer for Naruto x Boruto: Ultimate Ninja Storm Connections.**
 
 One `.exe`. No setup, no config files, no extra tools. All addresses, signatures, patches and hotkeys are built in.
 
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
+![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D4)
+![UI](https://img.shields.io/badge/UI-WPF%20%2B%20WPF--UI-6A2FA0)
+![Game](https://img.shields.io/badge/game-single--player%20only-4C9F38)
+![Release](https://img.shields.io/github/v/release/fathun12/NSUNS-Trainer?label=release)
+![License](https://img.shields.io/badge/license-free%2C%20not%20for%20sale-E4572E)
+
+<img src="docs/screenshot-1.png" alt="NSUNS Trainer" width="420">
+
 > Your whole side is protected. Enemies are not affected.
+
+</div>
 
 ---
 
@@ -14,13 +27,37 @@ One `.exe`. No setup, no config files, no extra tools. All addresses, signatures
 |---|---|---|
 | God Mode | `F2` | Your whole team takes no damage. Works with sub-characters and in mirror matches. |
 | Unlimited Chakra | `F3` | Your whole team keeps its chakra. |
+| Instant Awakening | - | One switch that prepares everything for Awakening. See below. |
+| Unlimited Awakening | - | The Awakening timer of your whole side does not run out. Enemy Awakening still ends normally. |
 | Team Tag | `F4` | Call your partner (RB / LB on a controller, Q / U on keyboard) with no cooldown. Spam it freely. |
-| Unlimited Team Bar | `F5` | Locks the Team Bar at 100. |
 | Tag Switch | `F7` | Swap characters in team mode with no cooldown. Switch as often as you like. |
 | Unlimited Kawarimi | `F9` | Substitution Jutsu without running out. |
+| Unlimited Team Bar | `F5` | Locks the Team Bar at 100. |
 | Gold Ticket | - | Read, set, or lock your Gold Ticket count. |
 
-Every hotkey can be changed inside the app. Hotkeys work globally, even while the game has focus.
+Every hotkey can be changed inside the app. Hotkeys work globally, even while the game has focus. Instant Awakening and Unlimited Awakening have no default hotkey: type one in the box on the row.
+
+### Instant Awakening
+
+When you turn it on:
+
+1. **God Mode is turned off automatically** if it was on. It is not turned back on when you turn Instant Awakening off.
+2. **Your HP is set to 40 and locked** there (the game needs HP 40 before Awakening can start).
+3. **Unlimited Awakening is turned on.**
+
+You still trigger Awakening yourself with the game's own button combination. This switch does not trigger it for you.
+
+When you turn it off, the HP lock is released and Unlimited Awakening is turned off. If any part turns off or fails while it is on, everything is released automatically and the row explains why.
+
+**Heads up:** the HP lock puts HP back to 40, it does not stop damage. A hit that takes all your HP in a single frame can still get through, because God Mode is off while Instant Awakening is on.
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshot-2.png" alt="Switch list" width="32%">
+  <img src="docs/screenshot-3.png" alt="Switch list, scrolled" width="32%">
+  <img src="docs/screenshot-4.png" alt="Switch list, scrolled further" width="32%">
+</p>
 
 ## How it works
 
