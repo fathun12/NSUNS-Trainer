@@ -48,6 +48,7 @@ public static class GameData
                     InstructionOffset = 0,
                     OriginalBytes = "41 8D 04 3F 41 89 86 E0 00 00 00 41 8D 1C 3F 44 8B 5D 93 41 03 DB",
                     Mode = "Exp",
+                    MaxMultiplier = 100000,
                     Multiplier = 2,
                     Adjustable = true,
                     Hotkey = ""
