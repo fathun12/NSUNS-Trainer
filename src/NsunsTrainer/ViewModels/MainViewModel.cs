@@ -126,7 +126,12 @@ public partial class MainViewModel : ObservableObject
         {
             if (string.IsNullOrWhiteSpace(row.HotkeyText)) continue;
 
-            string? error = _hotkeys.Register(row.HotkeyText, row.HotkeyToggle);
+            string? error = _hotkeys.Register(row.HotkeyText, () =>
+            {
+                bool wanted = !row.IsOn;
+                row.HotkeyToggle();
+                Sfx.PlayWhenSettled(row, wanted);
+            });
             row.HotkeyStatus = error is null ? $"Hotkey: {row.HotkeyText}" : $"Hotkey {row.HotkeyText}: {error}";
         }
     }
