@@ -1,6 +1,6 @@
 # SPEC: NSUNS Trainer
 
-> Dokumen serah-terima untuk sesi AI berikutnya. BACA SELURUHNYA sebelum menulis apa pun. Terakhir diperbarui: 4 Nov 2026 (Unlimited Awakening dan Instant Awakening, urutan daftar baru, rilis v1.1.1; Damage Multiplier dan One Hit Kill, rilis v1.2.0; efek suara, rilis v1.2.1; baca bagian 9, 10 dan 11).
+> Dokumen serah-terima untuk sesi AI berikutnya. BACA SELURUHNYA sebelum menulis apa pun. Terakhir diperbarui: 4 Nov 2026 (Unlimited Awakening dan Instant Awakening, urutan daftar baru, rilis v1.1.1; Damage Multiplier dan One Hit Kill, rilis v1.2.0; efek suara, rilis v1.2.1; EXP Multiplier, rilis v1.3.0 dan v1.3.1; baca bagian 9, 10, 11 dan 12).
 > Proyek ini MANDIRI. Proyek lain milik user (Ramreader, `D:\Projects\Ramreader`) punya SPEC.md sendiri. JANGAN mengedit SPEC Ramreader kecuali user menyuruh.
 
 ## 0. Prompt pembuka untuk sesi baru
@@ -30,8 +30,10 @@ User berbahasa Indonesia, awam, mudah frustrasi. HURUF KAPITAL SEMUA = marah kar
 11. **Jujur.** Pisahkan jelas yang terbukti dari layar user dan yang tebakan (beri label). Jangan mencatat "terbukti" sebelum user melapor. Laporan user dari pengalamannya sendiri adalah fakta; jangan dibantah.
 12. **Baca pesan sampai habis dan jangan mengubah arti kalimat user.** Salah baca = frustrasi.
 13. **Jangan pernah menghapus atau menganggap tak berfungsi apa pun hasil kerja user** (alamat, patch, kartu). Team Bar dan Unlimited Team Bar berfungsi. AI lama pernah salah menganggap Team Bar tidak jalan dan hendak menghapusnya; user marah besar. Hapus hanya jika user sendiri yang menyuruh.
-14. **Jangan memakai Mode Nop** (NOP polos membuat musuh ikut kebal). Trainer ini hanya memakai Mode Tree dan Mode TreeOwner (hook pada call, khusus Unlimited Awakening).
+14. **Jangan memakai Mode Nop** (NOP polos membuat musuh ikut kebal). Mode yang dipakai trainer: Tree, TreeOwner (hook pada call, khusus Unlimited Awakening), TreeDamage (Damage Multiplier dan One Hit Kill, bagian 10), dan Exp (EXP Multiplier, bagian 12).
 15. **Mencari nilai atau alamat BARU** (fitur baru, game di-update) dilakukan user dengan **RAMREADER-nya** (`D:\Projects\Ramreader`: Cari Nilai, Jalur Stabil, Penulis Kode, Buat Patch). JANGAN menyuruh Cheat Engine dan jangan menebak alamat. NSUNS Trainer hanya membungkus hasil yang sudah ditemukan; alamat baru dimasukkan ke `GameData.cs` dari sesi Ramreader (`%AppData%\Ramreader\sessions\NSUNSC.json`). Jangan mengedit JSON itu lewat ConvertFrom/To-Json.
+16. **Batas, nilai bawaan, dan perilaku fitur yang bukan dari game ditanyakan ke user dulu, dengan rekomendasi.** Jangan menyalin batas dari fitur lain. Insiden 5 Nov 2026: EXP Multiplier diberi batas 1 sampai 10 (disalin dari Damage Multiplier, yang punya alasan sendiri) tanpa bertanya. User mengetik 100, kotak menolaknya dan terus memakai x10, user marah. Batas EXP kini 100000. Jangan juga melempar keputusan yang menyangkut angka yang user pakai dengan kata "keputusanmu".
+17. **Nomor versi dan rilis.** Sebelum memberi nomor versi, cek rilis yang sudah terbit (screenshot atau pesan user). Tag rilis harus menunjuk commit yang berisi kode terbaru; push adalah keputusan user (aturan 9), jadi AI tidak menaruh `git push` di perintah. Insiden 5 Nov 2026: AI menyuruh memakai v1.3.0 yang sudah terbit, lalu menaruh `git push` di perintah rilis berikutnya, melanggar aturan 9.
 
 ## 3. Lingkungan
 
@@ -47,7 +49,7 @@ D:\Projects\NSUNS Trainer\
     Native\    NativeMethods, ProcessMemory (baca), MemoryWriter (satu-satunya yang menulis ke game)
     Scanning\  AobPattern, AobScanner, SignatureResolver, ValueCodec
     Pointers\  PointerChain, PointerVerifier, AddressResolver (jalur berurutan, lalu signature)
-    Cave\      CodeCave (BuildTreeDiag, BuildCallOwner, BuildTreeDamage), SideTree, CodePatchLocator
+    Cave\      CodeCave (BuildTreeDiag, BuildCallOwner, BuildTreeDamage, BuildExpMultiplier), SideTree, CodePatchLocator
     Data\      GameData (SEMUA data NSUNSC tertanam)
     Services\  HotkeyService, TrainerSession, Sfx
     ViewMod    ViewModels\ FeatureItem (kartu nilai), PatchItem (patch Tree dan TreeOwner), InstantAwakeningItem, IToggleRow (antarmuka baris switch), MainViewModelels\ FeatureItem (kartu nilai), PatchItem (patch Tree), MainViewModel
@@ -76,12 +78,15 @@ Daftar langkah pribadi user (posisi disebut tiap pesan):
 | Rilis | v1.2.0 terbit di GitHub (commit 131d849, exe 61,1 MB, Latest, screenshot user) | SUDAH. Lihat bagian 10 |
 | S1-S3 | Efek suara saat switch dinyalakan atau dimatikan (Services\Sfx.cs, WAV tertanam di exe) | SUDAH (build lolos; user melapor "udah menyala!" pada 5 Nov 2026; rincian tesnya tidak dilaporkan). Lihat bagian 11 |
 | Rilis | v1.2.1: perintah publish, deskripsi, dan tag disiapkan | Terbitnya di GitHub belum dilaporkan user. Lihat bagian 11 |
+| X1-X4 | EXP Multiplier (Mode Exp, hook +B308FB, alamat EXP dicari user di Ramreader) | SUDAH (build lolos; user melapor x10 berhasil, 390 jadi 3900, 5 Nov 2026). Lihat bagian 12 |
+| X5 | Batas EXP Multiplier 1 sampai 100000 (MaxMultiplier) | Edit ditulis; user belum melaporkan menempel, build, atau tes x100 |
+| Rilis | v1.3.0 terbit (screenshot: commit 131d849, exe 61,6 MB, Latest); v1.3.1 disiapkan | v1.3.1 belum dilaporkan terbit. Lihat bagian 12 |
 
 Acuan tampilan: `D:\Projects\Ramreader\src\Ramreader.Trainer\MainWindow.xaml` dan `Themes\AppStyles.xaml` (WPF-UI, Mica, dark, kartu `FeatureItem` dan `PatchItem` lewat DataTemplate). Minta file itu lewat perintah clipboard (aturan 8) sebelum menulis XAML. Kontrol WPF biasa tidak mengikuti tema gelap; pakai kontrol WPF-UI (`ui:Button`, `ui:TextBox`, `ui:ToggleSwitch`). Proyek WPF tidak memuat `System.IO` otomatis.
 
 ## 6. Yang BELUM terbukti (jangan dicatat terbukti sebelum user melapor)
 
-Untuk Damage Multiplier dan One Hit Kill, yang belum terbukti ada di bagian 10; untuk efek suara di bagian 11.
+Untuk Damage Multiplier dan One Hit Kill, yang belum terbukti ada di bagian 10; untuk efek suara di bagian 11; untuk EXP Multiplier di bagian 12.
 
 NSUNS Trainer sudah dijalankan: tersambung ke NSUNSC dan tampil benar (laporan user, 3 Nov 2026). Pada 4 Nov 2026 user melaporkan semua fungsi trainer berjalan (setelah penambahan Awakening), tanpa error dan tanpa nilai tidak sesuai; rincian per patch dan per kondisi tetap tidak diberikan, jadi tiga kondisi di bawah masih dianggap belum terbukti rinci. Logika yang disalin dari Ramreader terbukti di sana, tetapi versi mandiri ini baru lolos build. Uji setelah R1-4e: tiap patch (tim kebal, musuh kena), Team Bar auto-lock, Gold Ticket, hotkey, di 3 kondisi (match sekarang, rematch, ganti karakter lalu match baru).
 
@@ -148,3 +153,25 @@ Label: FAKTA = laporan atau hasil perintah user; DUGAAN = belum terbukti; TIDAK 
 **Rilis v1.2.1.** Disiapkan: perintah publish sama seperti sebelumnya dengan `$ver = "1.2.1"`, commit "feat: on/off sound effects for switches (v1.2.1)", tag `v1.2.1`, kredit Mixkit di bagian Notes. `NsunsTrainer.csproj` tetap `<Version>1.0.0</Version>`, versi datang dari `-p:Version`. Ukuran exe sekitar 62 MB hanya perkiraan AI (naik sekitar 1 MB karena WAV); ukuran aktual tidak dilaporkan. Apakah rilis sudah terbit di GitHub: tidak dilaporkan.
 
 **Belum terbukti.** DUGAAN: `ToggleSwitch` WPF-UI memicu `Click` hanya saat diklik user, bukan saat nilainya berubah lewat binding (tidak dilaporkan terpisah). TIDAK TAHU: apakah switch yang ditolak benar-benar diam; apakah bunyi nyala (sekitar 4,4 detik) terlalu panjang; apakah WAV mentah yang ikut di repo dan "Source code zip" sesuai lisensi Mixkit. Volume tidak bisa diatur dari trainer (`SoundPlayer`); tidak ada pengaturan senyap.
+
+## 12. Catatan sesi 5 Nov 2026 (EXP Multiplier, rilis v1.3.0 dan v1.3.1, ide tray)
+
+Label: FAKTA = laporan, screenshot, atau hasil perintah user; DUGAAN = belum terbukti; TIDAK TAHU = jangan dianggap benar.
+
+**Alamat dan kode EXP (dicari user di Ramreader).**
+- Kartu "EXP" di Ramreader: jalur `NSUNSC.exe+21D7490 -> +188 -> +298`, int, 20 jalur, terverifikasi (screenshot). Nilainya 260, sama dengan bar level di layar (260/760, Lv. 6). Bar itu EXP per level, bukan total: jumlah tambahan EXP tidak cocok dengan total (laporan user).
+- Penulis Kode di kartu itu menangkap `mov [r14+0B8h],eax` di +B309E8 (Hit 1, Berubah 1, Turun 1). Itu hanya penyimpan hasil akhir (angka bar), BUKAN tempat penambahan; hook di sana salah.
+- Dari bongkaran Lihat Kode (user): `ebx` = total baru = total lama (`r11d`, `[rbp-6Dh]`) + tambahan (`r15d + edi`), dibatasi 9.999.999 (`98967Fh`). `edi` = level baru (tabel ambang di `[r14+40h]`). Bar = `ebx` dikurangi ambang level sebelumnya, disimpan di +B309E8. Tambahan juga ke `[r14+0E0h]` (layar hasil); `[r14+0D8h]` dan `[r14+0DCh]` disimpan terpisah (`esi`, `r12d`).
+
+**Yang ditambahkan (build lolos, dilaporkan user).**
+- Hook di **+B308FB, 22 byte** (`41 8D 04 3F 41 89 86 E0 00 00 00 41 8D 1C 3F 44 8B 5D 93 41 03 DB`), pola 32 byte (22 byte itu ditambah `B8 7F 96 98 00 3B D8 0F 43 D8`).
+- **Mode "Exp"**: `CodeCave.ExpSiteBytes` dan `BuildExpMultiplier(k, ...)`. Cave: `applied++`, simpan xmm0 di stack, `eax = r15d + edi`, kali k (`cvtsi2ss`, `mulss`, `cvttss2si`), tulis ke `[r14+0E0h]`, `ebx = eax`, `r11d = [rbp-6Dh]`, `ebx += r11d`, lompat kembali. Blok data 16 byte: +0 applied, +8 float k. Tanpa slot sisi (tidak ada pencarian pemain atau musuh). `CaveInfo(0, 0, 22)`. `PatchItem`: `IsExp`, `MultiplierLabel` ("EXP x"), Tick hanya menulis k, Diagnostic "applied Nx". `GameData`: kartu "EXP" (Int32, tanpa jalur) berisi patch "EXP Multiplier" (bawaan x2, Adjustable, hotkey kosong); judul masuk `ToggleOrder` sesudah One Hit Kill. `MainWindow.xaml`: label kotak memakai `MultiplierLabel`.
+- **Batas pengali:** `CodePatch.MaxMultiplier` (0 = 10), `PatchItem.MaxK`, `TryParseMultiplier` tidak lagi static, pesan "from 1 to N". EXP: `MaxMultiplier = 100000`. Damage Multiplier tetap 1 sampai 10. User menyebut "1000 maksimal, kalau tidak ya 100 ribu"; AI memilih 100000 dan user belum menegaskan.
+
+**FAKTA (laporan user, 5 Nov 2026).** EXP Multiplier berfungsi: x10 membuat tambahan 390 menjadi 3900. Setelah mengetik 100, tambahan hanya sekitar 4000-an. Penyebabnya dari kode: `TryParseMultiplier` menolak `d > 10` dan memakai k lama (x10).
+
+**Rilis.** v1.3.0 terbit (screenshot: commit 131d849, exe 61,6 MB, Latest, deskripsi menyebut batas 1 sampai 10). Commit 131d849 sama dengan commit v1.2.0, dan "Source code" berumur 15 jam. DUGAAN: tag v1.3.0 menunjuk commit lama karena commit lokal belum di-push, jadi zip source v1.3.0 tidak memuat kode EXP. v1.3.1 disiapkan (publish dengan `$ver = "1.3.1"`, tag `v1.3.1`, deskripsi batas 1 sampai 100000), terbitnya belum dilaporkan. Apakah v1.3.0 dihapus atau dibiarkan: belum diputuskan user.
+
+**Belum terbukti.** DUGAAN: `r15d + edi` adalah seluruh tambahan EXP dan `r11d` total sebelum match (kesimpulan dari kode; hasil x10 mendukung, belum membuktikan persis). TIDAK TAHU: apakah baris "Poin Exp" lain (+0D8h dan +0DCh) ikut terkali; apakah ada lompatan dari luar ke tengah 22 byte hook (kode sebelum +B308E8 tidak dibaca); apakah pengali di atas 10 (mis. x100) benar-benar bekerja, karena belum dites; level naik normal, kekalahan, dan karakter lain tidak dilaporkan.
+
+**Ide belum dibangun (pertanyaan user).** Jalan di latar lewat system tray (area notifikasi): tombol X menyembunyikan jendela, patch tetap aktif, Exit lewat menu tray (yang mengembalikan byte asli). Keputusan perilaku tombol X belum diberikan user. DUGAAN: hotkey tetap bekerja saat jendela tersembunyi; kontrol tray WPF-UI 4.3.0 belum diperiksa.
