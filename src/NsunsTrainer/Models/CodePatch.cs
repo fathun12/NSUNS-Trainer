@@ -26,6 +26,9 @@ public sealed class CodePatch
     /// <summary>TreeDamage only: true when the player may change Multiplier in the UI (1 to 10).</summary>
     public bool Adjustable { get; set; }
 
+    /// <summary>Adjustable only: highest factor the player may type (0 = default 10).</summary>
+    public double MaxMultiplier { get; set; }
+
     public static string ToHex(IEnumerable<byte> bytes) => string.Join(' ', bytes.Select(b => b.ToString("X2")));
 
     public static bool TryParseBytes(string? text, out byte[] bytes)

@@ -157,6 +157,7 @@ public partial class PatchItem : ObservableObject, IToggleRow
     private float _kWritten;  // factor currently in the cave data block (guarded by _lock)
 
     private float CurrentK { get { lock (_lock) return _k; } }
+    private double MaxK => _patch.MaxMultiplier > 0 ? _patch.MaxMultiplier : 10;
 
     partial void OnMultiplierTextChanged(string value)
     {
@@ -170,16 +171,16 @@ public partial class PatchItem : ObservableObject, IToggleRow
         }
         else
         {
-            MultiplierNote = "Enter a number from 1 to 10 (still x" + CurrentK.ToString("0.##", CultureInfo.InvariantCulture) + ").";
+            MultiplierNote = "Enter a number from 1 to " + MaxK.ToString("0.##", CultureInfo.InvariantCulture) + " (still x" + CurrentK.ToString("0.##", CultureInfo.InvariantCulture) + ").";
         }
     }
 
-    private static bool TryParseMultiplier(string? text, out float k)
+    private bool TryParseMultiplier(string? text, out float k)
     {
         k = 0;
         string clean = (text ?? "").Trim().Replace(',', '.');
         if (!double.TryParse(clean, NumberStyles.Float, CultureInfo.InvariantCulture, out double d)) return false;
-        if (double.IsNaN(d) || double.IsInfinity(d) || d < 1 || d > 10) return false;
+        if (double.IsNaN(d) || double.IsInfinity(d) || d < 1 || d > MaxK) return false;
         k = (float)d;
         return true;
     }
