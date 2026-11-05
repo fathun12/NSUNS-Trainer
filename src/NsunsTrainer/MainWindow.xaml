@@ -134,7 +134,8 @@
 
                                     <ui:ToggleSwitch Grid.Column="3"
                                                      VerticalAlignment="Center"
-                                                     IsChecked="{Binding IsOn, Mode=TwoWay}" />
+                                                     IsChecked="{Binding IsOn, Mode=TwoWay}"
+                                                     Click="OnToggleClick" />
                                 </Grid>
                             </Border>
                         </DataTemplate>

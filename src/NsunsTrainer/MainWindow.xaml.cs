@@ -28,6 +28,12 @@ public partial class MainWindow : FluentWindow
         _viewModel.AttachHotkeys(_hotkeys);
     }
 
+    private void OnToggleClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleSwitch toggle && toggle.DataContext is IToggleRow row)
+            Sfx.PlayWhenSettled(row, toggle.IsChecked == true);
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         _viewModel.Shutdown();
