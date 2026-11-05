@@ -126,8 +126,8 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </StackPanel.Style>
-                                            <TextBlock Text="Damage x" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
-                                            <ui:TextBox Width="64" Margin="6,0,0,0" Padding="4,4" VerticalAlignment="Center" FontFamily="{StaticResource MonoFont}" FontSize="12" TextAlignment="Center" ToolTip="Damage multiplier, 1 to 10 (for example 2 or 2.5). Click elsewhere to apply." Text="{Binding MultiplierText, UpdateSourceTrigger=LostFocus}" />
+                                            <TextBlock Text="{Binding MultiplierLabel}" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                            <ui:TextBox Width="64" Margin="6,0,0,0" Padding="4,4" VerticalAlignment="Center" FontFamily="{StaticResource MonoFont}" FontSize="12" TextAlignment="Center" ToolTip="Multiplier, 1 to 10 (for example 2 or 2.5). Click elsewhere to apply." Text="{Binding MultiplierText, UpdateSourceTrigger=LostFocus}" />
                                             <TextBlock Text="{Binding MultiplierNote}" Style="{StaticResource MutedText}" Margin="10,0,0,0" VerticalAlignment="Center" />
                                         </StackPanel>
                                     </StackPanel>

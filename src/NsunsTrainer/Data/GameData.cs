@@ -25,7 +25,7 @@ public static class GameData
     /// <summary>Order of the switch list. Titles not listed go last, in data order.</summary>
     public static readonly string[] ToggleOrder =
     {
-        "God Mode", "Unlimited Chakra", "Damage Multiplier", "One Hit Kill",
+        "God Mode", "Unlimited Chakra", "Damage Multiplier", "One Hit Kill", "EXP Multiplier",
         "Instant Awakening", "Unlimited Awakening",
         "Team Tag", "Tag Switch", "Unlimited Kawarimi", "Unlimited Team Bar"
     };
@@ -34,6 +34,26 @@ public static class GameData
 
     public static readonly List<SavedAddress> Addresses = new()
     {
+        new SavedAddress
+        {
+            Label = "EXP",
+            ValueType = ScanValueType.Int32,
+            MainModuleSize = ExpectedModuleSize,
+            CodePatches =
+            {
+                new CodePatch
+                {
+                    Label = "EXP Multiplier",
+                    Pattern = "41 8D 04 3F 41 89 86 E0 00 00 00 41 8D 1C 3F 44 8B 5D 93 41 03 DB B8 7F 96 98 00 3B D8 0F 43 D8",
+                    InstructionOffset = 0,
+                    OriginalBytes = "41 8D 04 3F 41 89 86 E0 00 00 00 41 8D 1C 3F 44 8B 5D 93 41 03 DB",
+                    Mode = "Exp",
+                    Multiplier = 2,
+                    Adjustable = true,
+                    Hotkey = ""
+                }
+            }
+        },
         new SavedAddress
         {
             Label = "Gold Ticket",

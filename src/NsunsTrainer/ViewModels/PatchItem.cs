@@ -64,6 +64,7 @@ public partial class PatchItem : ObservableObject, IToggleRow
     partial void OnHotkeyTextChanged(string value) => HotkeyEdited?.Invoke();
     private bool IsTreeOwner => string.Equals(_patch.Mode, "TreeOwner", StringComparison.OrdinalIgnoreCase);
     private bool IsTreeDamage => string.Equals(_patch.Mode, "TreeDamage", StringComparison.OrdinalIgnoreCase);
+    private bool IsExp => string.Equals(_patch.Mode, "Exp", StringComparison.OrdinalIgnoreCase);
 
     private string ActiveText => IsTreeOwner
         ? "Active: effect timers of your whole side are frozen, enemies are not."
@@ -71,7 +72,9 @@ public partial class PatchItem : ObservableObject, IToggleRow
             ? (_patch.Adjustable
                 ? "Active: enemies take more damage, your side is unchanged."
                 : "Active: enemies go down in one hit, your side is unchanged.")
-            : "Active: your whole side is protected, enemies are not.";
+            : IsExp
+                ? "Active: the EXP you earn after a win is multiplied."
+                : "Active: your whole side is protected, enemies are not.";
 
     public string ActionText => "";
 
@@ -81,7 +84,9 @@ public partial class PatchItem : ObservableObject, IToggleRow
             ? (_patch.Adjustable
                 ? "Damage you deal to enemies is multiplied. Damage you take is not changed."
                 : "Every hit that damages an enemy kills it. Damage you take is not changed.")
-            : "Your whole side is protected; enemies are not affected.";
+            : IsExp
+                ? "The EXP you earn after a win is multiplied, so your level goes up faster."
+                : "Your whole side is protected; enemies are not affected.";
 
     /// <summary>Normal patches: the writer instruction. TreeOwner: one call instruction (E8 rel32).</summary>
     private bool TryAnalyzeAny(byte[] original, out CaveInfo? info, out string error)
@@ -97,6 +102,20 @@ public partial class PatchItem : ObservableObject, IToggleRow
             }
 
             info = new CaveInfo(1, _patch.BaseDisp, original.Length);
+            return true;
+        }
+
+        if (IsExp)
+        {
+            info = null;
+            error = "";
+            if (!original.AsSpan().SequenceEqual(CodeCave.ExpSiteBytes))
+            {
+                error = "The EXP patch needs the 22 bytes of the EXP gain code.";
+                return false;
+            }
+
+            info = new CaveInfo(0, 0, original.Length);
             return true;
         }
 
@@ -129,6 +148,7 @@ public partial class PatchItem : ObservableObject, IToggleRow
     // ---------- damage multiplier (TreeDamage, adjustable patch only) ----------
 
     public bool ShowMultiplier => _patch.Adjustable;
+    public string MultiplierLabel => IsExp ? "EXP x" : "Damage x";
     [ObservableProperty] private string _multiplierText = "";
     [ObservableProperty] private string _multiplierNote = "";
     public event Action? MultiplierEdited;
@@ -207,6 +227,12 @@ public partial class PatchItem : ObservableObject, IToggleRow
         }
         if (cave == 0) return;
 
+        if (IsExp)
+        {
+            WriteMultiplierIfChanged(writer, cave);
+            return;
+        }
+
         var tree = ComputeTreeSlots(memory);
         if (tree is null) return;
 
@@ -279,6 +305,7 @@ public partial class PatchItem : ObservableObject, IToggleRow
 
         uint skip = BitConverter.ToUInt32(bytes, 0);
         uint run = BitConverter.ToUInt32(bytes, 4);
+        if (IsExp) return $" | applied {skip}x";
         if (IsTreeDamage) return $" | scaled {skip}x, left alone {run}x";
 
         return IsTreeOwner
@@ -495,7 +522,7 @@ public partial class PatchItem : ObservableObject, IToggleRow
         var info = _cave;
         if (info is null) return "This patch cannot be used: " + _caveError;
 
-        var tree = ComputeTreeSlots(memory);
+        var tree = IsExp ? Array.Empty<ulong>() : ComputeTreeSlots(memory);
         if (tree is null)
             return "Your side was not found yet. Enter a match, move your character, then turn it on again.";
 
@@ -511,6 +538,12 @@ public partial class PatchItem : ObservableObject, IToggleRow
 
         byte[] code;
         int slotOffset, dataOffset;
+        if (IsExp)
+        {
+            code = CodeCave.BuildExpMultiplier(CurrentK, cave, site, out dataOffset);
+            slotOffset = dataOffset;
+        }
+        else
         if (IsTreeOwner)
         {
             if (original.Length != 5 || original[0] != 0xE8) return "The patch bytes are not a call (E8 + 4 bytes).";
@@ -542,7 +575,7 @@ public partial class PatchItem : ObservableObject, IToggleRow
             _caveAddr = cave;
             _slotOffset = slotOffset;
             _dataOffset = dataOffset;
-            if (IsTreeDamage) _kWritten = BitConverter.ToSingle(code, dataOffset + 8);
+            if (IsTreeDamage || IsExp) _kWritten = BitConverter.ToSingle(code, dataOffset + 8);
             _lastTree = tree;
         }
         return "";

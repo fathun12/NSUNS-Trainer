@@ -285,5 +285,61 @@ public static class CodeCave
         return bytes;
     }
 
+    /// <summary>The 22 bytes hooked by the EXP patch: gain (r15d+edi) to [r14+0E0h], then new total ebx = gain + r11d.</summary>
+    public static readonly byte[] ExpSiteBytes =
+    {
+        0x41, 0x8D, 0x04, 0x3F,
+        0x41, 0x89, 0x86, 0xE0, 0x00, 0x00, 0x00,
+        0x41, 0x8D, 0x1C, 0x3F,
+        0x44, 0x8B, 0x5D, 0x93,
+        0x41, 0x03, 0xDB
+    };
+
+    /// <summary>
+    /// "Exp" cave (replaces the 22 bytes above): gain = r15d+edi is multiplied by k (float), stored in [r14+0E0h],
+    /// and used for ebx = gain + r11d. xmm0 is saved and restored. Data block (16 bytes) at dataOffset:
+    /// +0 applied count, +4 unused, +8 float k. No side slots.
+    /// </summary>
+    public static byte[] BuildExpMultiplier(float k, ulong caveAddress, ulong instructionAddress, out int dataOffset)
+    {
+        ulong ret = instructionAddress + (ulong)ExpSiteBytes.Length;
+        var code = new List<byte>(128);
+        var fixups = new List<(int Pos, int Index)>();
+
+        void RipRef(int index)
+        {
+            fixups.Add((code.Count, index));
+            code.AddRange(new byte[4]);
+        }
+
+        code.Add(0xFF); code.Add(0x05);                                        // applied++
+        RipRef(0);
+        code.AddRange(new byte[] { 0x48, 0x83, 0xEC, 0x10 });                  // sub rsp,10h
+        code.AddRange(new byte[] { 0x0F, 0x11, 0x04, 0x24 });                  // movups [rsp],xmm0
+        code.AddRange(new byte[] { 0x41, 0x8D, 0x04, 0x3F });                  // lea eax,[r15+rdi]
+        code.AddRange(new byte[] { 0xF3, 0x48, 0x0F, 0x2A, 0xC0 });            // cvtsi2ss xmm0,rax
+        code.AddRange(new byte[] { 0xF3, 0x0F, 0x59, 0x05 });                  // mulss xmm0,[rip+k]
+        RipRef(8);
+        code.AddRange(new byte[] { 0xF3, 0x48, 0x0F, 0x2C, 0xC0 });            // cvttss2si rax,xmm0
+        code.AddRange(new byte[] { 0x0F, 0x10, 0x04, 0x24 });                  // movups xmm0,[rsp]
+        code.AddRange(new byte[] { 0x48, 0x83, 0xC4, 0x10 });                  // add rsp,10h
+        code.AddRange(new byte[] { 0x41, 0x89, 0x86, 0xE0, 0x00, 0x00, 0x00 }); // mov [r14+0E0h],eax
+        code.AddRange(new byte[] { 0x89, 0xC3 });                              // mov ebx,eax
+        code.AddRange(new byte[] { 0x44, 0x8B, 0x5D, 0x93 });                  // mov r11d,[rbp-6Dh]
+        code.AddRange(new byte[] { 0x41, 0x03, 0xDB });                        // add ebx,r11d
+        code.Add(0xE9);                                                        // jmp back to the game
+        int j = code.Count;
+        code.AddRange(BitConverter.GetBytes(Rel(ret, caveAddress + (ulong)j + 4)));
+
+        dataOffset = (code.Count + 7) & ~7;
+        while (code.Count < dataOffset + 16) code.Add(0);
+
+        var bytes = code.ToArray();
+        foreach (var (pos, index) in fixups)
+            BitConverter.GetBytes(dataOffset + index - (pos + 4)).CopyTo(bytes, pos);
+        BitConverter.GetBytes(k).CopyTo(bytes, dataOffset + 8);
+        return bytes;
+    }
+
     private static int Rel(ulong target, ulong next) => checked((int)((long)target - (long)next));
 }

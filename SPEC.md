@@ -1,6 +1,6 @@
 # SPEC: NSUNS Trainer
 
-> Dokumen serah-terima untuk sesi AI berikutnya. BACA SELURUHNYA sebelum menulis apa pun. Terakhir diperbarui: 4 Nov 2026 (Unlimited Awakening dan Instant Awakening, urutan daftar baru, rilis v1.1.1; Damage Multiplier dan One Hit Kill, rilis v1.2.0; baca bagian 9 dan 10).
+> Dokumen serah-terima untuk sesi AI berikutnya. BACA SELURUHNYA sebelum menulis apa pun. Terakhir diperbarui: 4 Nov 2026 (Unlimited Awakening dan Instant Awakening, urutan daftar baru, rilis v1.1.1; Damage Multiplier dan One Hit Kill, rilis v1.2.0; efek suara, rilis v1.2.1; baca bagian 9, 10 dan 11).
 > Proyek ini MANDIRI. Proyek lain milik user (Ramreader, `D:\Projects\Ramreader`) punya SPEC.md sendiri. JANGAN mengedit SPEC Ramreader kecuali user menyuruh.
 
 ## 0. Prompt pembuka untuk sesi baru
@@ -49,7 +49,7 @@ D:\Projects\NSUNS Trainer\
     Pointers\  PointerChain, PointerVerifier, AddressResolver (jalur berurutan, lalu signature)
     Cave\      CodeCave (BuildTreeDiag, BuildCallOwner, BuildTreeDamage), SideTree, CodePatchLocator
     Data\      GameData (SEMUA data NSUNSC tertanam)
-    Services\  HotkeyService, TrainerSession
+    Services\  HotkeyService, TrainerSession, Sfx
     ViewMod    ViewModels\ FeatureItem (kartu nilai), PatchItem (patch Tree dan TreeOwner), InstantAwakeningItem, IToggleRow (antarmuka baris switch), MainViewModelels\ FeatureItem (kartu nilai), PatchItem (patch Tree), MainViewModel
 ```
 
@@ -74,12 +74,14 @@ Daftar langkah pribadi user (posisi disebut tiap pesan):
 | Rilis | v1.0.0 (exe 64,7 MB) dan v1.1.1 (exe 61,1 MB, commit 874de3c) terbit di GitHub (screenshot user) | SUDAH. Lihat bagian 9 |
 | D1-D3 | Damage Multiplier dan One Hit Kill (Mode TreeDamage, hook +94BADB) | SUDAH (build lolos; 20+ match, berfungsi tanpa konflik, dilaporkan user 4 Nov 2026; tiga kondisi tidak dirinci). Lihat bagian 10 |
 | Rilis | v1.2.0 terbit di GitHub (commit 131d849, exe 61,1 MB, Latest, screenshot user) | SUDAH. Lihat bagian 10 |
+| S1-S3 | Efek suara saat switch dinyalakan atau dimatikan (Services\Sfx.cs, WAV tertanam di exe) | SUDAH (build lolos; user melapor "udah menyala!" pada 5 Nov 2026; rincian tesnya tidak dilaporkan). Lihat bagian 11 |
+| Rilis | v1.2.1: perintah publish, deskripsi, dan tag disiapkan | Terbitnya di GitHub belum dilaporkan user. Lihat bagian 11 |
 
 Acuan tampilan: `D:\Projects\Ramreader\src\Ramreader.Trainer\MainWindow.xaml` dan `Themes\AppStyles.xaml` (WPF-UI, Mica, dark, kartu `FeatureItem` dan `PatchItem` lewat DataTemplate). Minta file itu lewat perintah clipboard (aturan 8) sebelum menulis XAML. Kontrol WPF biasa tidak mengikuti tema gelap; pakai kontrol WPF-UI (`ui:Button`, `ui:TextBox`, `ui:ToggleSwitch`). Proyek WPF tidak memuat `System.IO` otomatis.
 
 ## 6. Yang BELUM terbukti (jangan dicatat terbukti sebelum user melapor)
 
-Untuk Damage Multiplier dan One Hit Kill, yang belum terbukti ada di bagian 10.
+Untuk Damage Multiplier dan One Hit Kill, yang belum terbukti ada di bagian 10; untuk efek suara di bagian 11.
 
 NSUNS Trainer sudah dijalankan: tersambung ke NSUNSC dan tampil benar (laporan user, 3 Nov 2026). Pada 4 Nov 2026 user melaporkan semua fungsi trainer berjalan (setelah penambahan Awakening), tanpa error dan tanpa nilai tidak sesuai; rincian per patch dan per kondisi tetap tidak diberikan, jadi tiga kondisi di bawah masih dianggap belum terbukti rinci. Logika yang disalin dari Ramreader terbukti di sana, tetapi versi mandiri ini baru lolos build. Uji setelah R1-4e: tiap patch (tim kebal, musuh kena), Team Bar auto-lock, Gold Ticket, hotkey, di 3 kondisi (match sekarang, rematch, ganti karakter lalu match baru).
 
@@ -128,3 +130,21 @@ Label: FAKTA = laporan atau screenshot user; DUGAAN = belum terbukti; TIDAK TAHU
 **FAKTA (laporan user, 4 Nov 2026).** Lebih dari 20 match: One Hit Kill dan Damage Multiplier berfungsi, tidak ada konflik. Semua cheat dinyalakan bersamaan (pasangan Damage Multiplier / One Hit Kill dan God Mode / Instant Awakening digilir karena tidak bisa menyala bersamaan): aman. Tidak ada musuh yang terkena efek trainer (sisi pemain tidak salah alamat), dan tim tetap menerima efek. Rilis v1.2.0 terbit (screenshot: commit 131d849, exe 61,1 MB, Latest). Perintah publish sama seperti v1.1.1, dengan `-p:Version=1.2.0`.
 
 **Belum terbukti.** Tiga kondisi (match sekarang, rematch, ganti karakter lalu match baru) tidak dirinci user, hanya "20+ match". DUGAAN: xmm2 tidak dipakai lagi sesudah fungsi selesai (aturan register volatile Windows x64; tidak ada gejala dilaporkan). TIDAK TAHU: apakah semua jenis serangan (Ougi, cutscene, Awakening) lewat +94BA90. Fungsi kembar +94BB00 (`rax`, `xmm6`, `[rax+10h]`) dan +94BA40 (varian chakra) tidak di-hook; kalau ada serangan yang tidak terkali atau tidak langsung KO, kemungkinan lewat sana. Apakah KO lewat One Hit Kill memicu hasil dan skor normal: tidak dirinci.
+
+## 11. Catatan sesi 5 Nov 2026 (efek suara, rilis v1.2.1)
+
+Label: FAKTA = laporan atau hasil perintah user; DUGAAN = belum terbukti; TIDAK TAHU = jangan dianggap benar.
+
+**Yang ditambahkan (build lolos, dilaporkan user).**
+- **Efek suara** seperti WeMod: satu bunyi saat switch dinyalakan, bunyi lain saat dimatikan, untuk semua switch di daftar (termasuk Instant Awakening), lewat klik maupun hotkey. Pelepasan otomatis (game ditutup, Instant Awakening lepas sendiri) tidak berbunyi.
+- `Services\Sfx.cs` (berkas baru): dua `SoundPlayer` statis dari resource tertanam `Sounds.enable.wav` dan `Sounds.disable.wav`. `Play(bool)` memutar; `PlayWhenSettled(IToggleRow, bool wanted)` menunda lewat `Dispatcher.BeginInvoke` (prioritas Background) dan memutar hanya bila `row.IsOn == wanted`, jadi switch yang ditolak dan kembali ke posisi semula tidak berbunyi (mis. Damage Multiplier saat One Hit Kill menyala).
+- `NsunsTrainer.csproj`: dua `EmbeddedResource` dari `Assets\Sounds\enable.wav` dan `Assets\Sounds\disable.wav`, dengan `LogicalName` tetap. Exe tetap satu berkas, tanpa berkas lepas.
+- `MainWindow.xaml`: `ToggleSwitch` di daftar punya `Click="OnToggleClick"`. `MainWindow.xaml.cs`: `OnToggleClick` memanggil `Sfx.PlayWhenSettled(row, toggle.IsChecked == true)`. `MainViewModel.AttachHotkeys`: aksi hotkey dibungkus (`wanted = !row.IsOn`, `HotkeyToggle()`, `PlayWhenSettled`). `HotkeyService` menjalankan aksi di `WndProc` (thread UI).
+- **Berkas suara:** dari Mixkit (halaman unduhan user: https://mixkit.co/free-sound-effects/ding/), disalin dari Unduhan (`enable_sxf.wav`, `disable_sfx.wav`) ke `Assets\Sounds\enable.wav` dan `disable.wav`. Format hasil perintah user: PCM, 16-bit, stereo, 44,1 kHz. `enable.wav` 769788 byte (sekitar 4,4 detik, hitungan AI), `disable.wav` 246744 byte (sekitar 1,4 detik). `SoundPlayer` hanya bisa memutar WAV PCM.
+- **Lisensi (ringkasan sumber sekunder, bukan teks resmi; AI tidak berhasil membuka halaman lisensi Mixkit):** Mixkit Sound Effects Free License memperbolehkan pemakaian pribadi dan komersial, atribusi dihargai tetapi tidak wajib, dan berkas mentah tidak boleh dibagikan berdiri sendiri. User memasang kredit satu baris di catatan rilis: "Sound effects via Mixkit" dengan link halaman unduhan. AI bukan penasihat hukum.
+
+**FAKTA (laporan user, 5 Nov 2026).** Setelah build dan tes, user melapor "udah menyala!". Rincian tes (klik, hotkey, switch ditolak, pelepasan otomatis) tidak dilaporkan satu per satu.
+
+**Rilis v1.2.1.** Disiapkan: perintah publish sama seperti sebelumnya dengan `$ver = "1.2.1"`, commit "feat: on/off sound effects for switches (v1.2.1)", tag `v1.2.1`, kredit Mixkit di bagian Notes. `NsunsTrainer.csproj` tetap `<Version>1.0.0</Version>`, versi datang dari `-p:Version`. Ukuran exe sekitar 62 MB hanya perkiraan AI (naik sekitar 1 MB karena WAV); ukuran aktual tidak dilaporkan. Apakah rilis sudah terbit di GitHub: tidak dilaporkan.
+
+**Belum terbukti.** DUGAAN: `ToggleSwitch` WPF-UI memicu `Click` hanya saat diklik user, bukan saat nilainya berubah lewat binding (tidak dilaporkan terpisah). TIDAK TAHU: apakah switch yang ditolak benar-benar diam; apakah bunyi nyala (sekitar 4,4 detik) terlalu panjang; apakah WAV mentah yang ikut di repo dan "Source code zip" sesuai lisensi Mixkit. Volume tidak bisa diatur dari trainer (`SoundPlayer`); tidak ada pengaturan senyap.
