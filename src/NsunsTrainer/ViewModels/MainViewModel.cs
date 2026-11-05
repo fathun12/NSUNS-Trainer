@@ -37,6 +37,9 @@ public partial class MainViewModel : ObservableObject
     public bool HasMessage => !string.IsNullOrEmpty(Message);
     public bool HasVersionWarning => !string.IsNullOrEmpty(VersionWarning);
 
+    /// <summary>True when the game is connected and the player turned something on (a switch or a value lock).</summary>
+    public bool ShouldStayInTray => Session.IsConnected && (Toggles.Any(t => t.IsOn) || Features.Any(f => f.IsFrozen));
+
     public MainViewModel()
     {
         foreach (var address in GameData.Addresses)
