@@ -1,5 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Globalization;
+using System.Numerics;
+using NsunsTrainer.Data;
 using NsunsTrainer.Models;
 using NsunsTrainer.Native;
 using NsunsTrainer.Pointers;
@@ -22,12 +25,14 @@ public partial class FeatureItem : ObservableObject, IToggleRow
     private ulong? _lastRaw;
     private int _autoPid;
     private volatile bool _freezeHeld;
+    private readonly long? _maxInput;
 
     public FeatureItem(SavedAddress saved, TrainerSession session, string? autoLock)
     {
         _saved = saved;
         _session = session;
         _autoLock = autoLock;
+        if (GameData.MaxInputs.TryGetValue(saved.Label, out long maxInput)) _maxInput = maxInput;
         if (!string.IsNullOrWhiteSpace(autoLock)) { _inputText = autoLock; _hotkeyText = "F5"; }
         foreach (var line in saved.Chains)
         {
@@ -60,6 +65,22 @@ public partial class FeatureItem : ObservableObject, IToggleRow
     [ObservableProperty] private string _actionText = "";
     [ObservableProperty] private bool _isFrozen;
     [ObservableProperty] private string _hotkeyStatus = "";
+
+    /// <summary>A typed whole number above the game's own maximum becomes that maximum immediately (works for pasted numbers too).</summary>
+    partial void OnInputTextChanged(string value)
+    {
+        if (_maxInput is null || string.IsNullOrWhiteSpace(value)) return;
+
+        string t = value.Trim();
+        foreach (char c in t)
+            if (c < '0' || c > '9') return;
+
+        if (BigInteger.TryParse(t, NumberStyles.None, CultureInfo.InvariantCulture, out var typed) && typed > _maxInput.Value)
+        {
+            InputText = _maxInput.Value.ToString(CultureInfo.InvariantCulture);
+            ActionText = $"Capped at the game's maximum ({InputText}).";
+        }
+    }
 
     private bool IsSane(ulong raw)
     {

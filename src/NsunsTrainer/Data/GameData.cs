@@ -11,10 +11,13 @@ public static class GameData
     public const ulong ExpectedModuleSize = 166223872;
 
     /// <summary>Value cards (Set and Lock). All other addresses only exist to find the player for patches.</summary>
-    public static readonly string[] FeatureLabels = { "Gold Ticket", "Team Bar", "HP" };
+    public static readonly string[] FeatureLabels = { "Gold Ticket", "Ryo", "Team Bar", "HP" };
 
     /// <summary>Value that is locked automatically once the game is found.</summary>
     public static readonly Dictionary<string, string> AutoLock = new() { ["Team Bar"] = "100" };
+
+    /// <summary>Highest value the game itself allows per card. A bigger typed number becomes this number right away.</summary>
+    public static readonly Dictionary<string, long> MaxInputs = new() { ["Ryo"] = 9999999, ["Gold Ticket"] = 9999 };
 
     /// <summary>Helper cards that are not listed under VALUES (HP is needed by Instant Awakening).</summary>
     public static readonly string[] HiddenLabels = { "HP" };
@@ -79,6 +82,22 @@ public static class GameData
                 "NSUNSC.exe|2335D58|18,48,1A8,4C",
                 "NSUNSC.exe|2335D60|48,1F8,1A8,4C",
                 "NSUNSC.exe|2338400|8,388,1A8,4C"
+            }
+        },
+        new SavedAddress
+        {
+            Label = "Ryo",
+            ValueType = ScanValueType.Int32,
+            MainModuleSize = ExpectedModuleSize,
+            Chains =
+            {
+                "NSUNSC.exe|21DA008|",
+                "NSUNSC.exe|2317820|18,2D8,48",
+                "NSUNSC.exe|2335D48|328,1A8,48",
+                "NSUNSC.exe|2335D50|228,1A8,48",
+                "NSUNSC.exe|2335D58|B8,1A8,48",
+                "NSUNSC.exe|2335D60|258,1A8,48",
+                "NSUNSC.exe|21D7560|70,2C8,2D8,48",
             }
         },
         new SavedAddress
