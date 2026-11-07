@@ -1,6 +1,6 @@
 # SPEC: NSUNS Trainer
 
-> Dokumen serah-terima untuk sesi AI berikutnya. BACA SELURUHNYA sebelum menulis apa pun. Terakhir diperbarui: 4 Nov 2026 (Unlimited Awakening dan Instant Awakening, urutan daftar baru, rilis v1.1.1; Damage Multiplier dan One Hit Kill, rilis v1.2.0; efek suara, rilis v1.2.1; EXP Multiplier, rilis v1.3.0 dan v1.3.1; baca bagian 9, 10, 11 dan 12).
+> Dokumen serah-terima untuk sesi AI berikutnya. BACA SELURUHNYA sebelum menulis apa pun. Terakhir diperbarui: 4 Nov 2026 (Unlimited Awakening dan Instant Awakening, urutan daftar baru, rilis v1.1.1; Damage Multiplier dan One Hit Kill, rilis v1.2.0; efek suara, rilis v1.2.1; EXP Multiplier, rilis v1.3.0 dan v1.3.1; tray, rilis v1.4.0; baca bagian 9, 10, 11, 12 dan 13).
 > Proyek ini MANDIRI. Proyek lain milik user (Ramreader, `D:\Projects\Ramreader`) punya SPEC.md sendiri. JANGAN mengedit SPEC Ramreader kecuali user menyuruh.
 
 ## 0. Prompt pembuka untuk sesi baru
@@ -34,6 +34,7 @@ User berbahasa Indonesia, awam, mudah frustrasi. HURUF KAPITAL SEMUA = marah kar
 15. **Mencari nilai atau alamat BARU** (fitur baru, game di-update) dilakukan user dengan **RAMREADER-nya** (`D:\Projects\Ramreader`: Cari Nilai, Jalur Stabil, Penulis Kode, Buat Patch). JANGAN menyuruh Cheat Engine dan jangan menebak alamat. NSUNS Trainer hanya membungkus hasil yang sudah ditemukan; alamat baru dimasukkan ke `GameData.cs` dari sesi Ramreader (`%AppData%\Ramreader\sessions\NSUNSC.json`). Jangan mengedit JSON itu lewat ConvertFrom/To-Json.
 16. **Batas, nilai bawaan, dan perilaku fitur yang bukan dari game ditanyakan ke user dulu, dengan rekomendasi.** Jangan menyalin batas dari fitur lain. Insiden 5 Nov 2026: EXP Multiplier diberi batas 1 sampai 10 (disalin dari Damage Multiplier, yang punya alasan sendiri) tanpa bertanya. User mengetik 100, kotak menolaknya dan terus memakai x10, user marah. Batas EXP kini 100000. Jangan juga melempar keputusan yang menyangkut angka yang user pakai dengan kata "keputusanmu".
 17. **Nomor versi dan rilis.** Sebelum memberi nomor versi, cek rilis yang sudah terbit (screenshot atau pesan user). Tag rilis harus menunjuk commit yang berisi kode terbaru; push adalah keputusan user (aturan 9), jadi AI tidak menaruh `git push` di perintah. Insiden 5 Nov 2026: AI menyuruh memakai v1.3.0 yang sudah terbit, lalu menaruh `git push` di perintah rilis berikutnya, melanggar aturan 9.
+18. **Dugaan yang bisa diperiksa lewat file: minta file, jangan membangun di atas dugaan dan jangan percaya komentar di kode.** Insiden 5 Nov 2026: AI mengira Team Bar terkunci otomatis karena komentar `AutoLock` di `GameData.cs`; padahal `FeatureItem.TryAutoLock` tidak dipanggil di mana pun (dari file yang user kirim). Team Bar dan semua cheat lain menyala hanya lewat switch. User marah. Setelah user bilang "bangun", langsung tulis kode tanpa pembukaan panjang.
 
 ## 3. Lingkungan
 
@@ -81,12 +82,14 @@ Daftar langkah pribadi user (posisi disebut tiap pesan):
 | X1-X4 | EXP Multiplier (Mode Exp, hook +B308FB, alamat EXP dicari user di Ramreader) | SUDAH (build lolos; user melapor x10 berhasil, 390 jadi 3900, 5 Nov 2026). Lihat bagian 12 |
 | X5 | Batas EXP Multiplier 1 sampai 100000 (MaxMultiplier) | Edit ditulis; user belum melaporkan menempel, build, atau tes x100 |
 | Rilis | v1.3.0 terbit (screenshot: commit 131d849, exe 61,6 MB, Latest); v1.3.1 disiapkan | v1.3.1 belum dilaporkan terbit. Lihat bagian 12 |
+| T1-T3 | Tray: tombol X menyembunyikan ke tray bila game tersambung dan ada cheat aktif; satu instance; menu Open dan Exit | SUDAH (build lolos; user melapor mode tray berjalan dan cheat tetap berfungsi, 5 Nov 2026; rincian tidak dilaporkan). Lihat bagian 13 |
+| Rilis | v1.4.0 disiapkan (perintah publish, deskripsi, tag) | Terbitnya belum dilaporkan user. Lihat bagian 13 |
 
 Acuan tampilan: `D:\Projects\Ramreader\src\Ramreader.Trainer\MainWindow.xaml` dan `Themes\AppStyles.xaml` (WPF-UI, Mica, dark, kartu `FeatureItem` dan `PatchItem` lewat DataTemplate). Minta file itu lewat perintah clipboard (aturan 8) sebelum menulis XAML. Kontrol WPF biasa tidak mengikuti tema gelap; pakai kontrol WPF-UI (`ui:Button`, `ui:TextBox`, `ui:ToggleSwitch`). Proyek WPF tidak memuat `System.IO` otomatis.
 
 ## 6. Yang BELUM terbukti (jangan dicatat terbukti sebelum user melapor)
 
-Untuk Damage Multiplier dan One Hit Kill, yang belum terbukti ada di bagian 10; untuk efek suara di bagian 11; untuk EXP Multiplier di bagian 12.
+Untuk Damage Multiplier dan One Hit Kill, yang belum terbukti ada di bagian 10; untuk efek suara di bagian 11; untuk EXP Multiplier di bagian 12; untuk tray di bagian 13.
 
 NSUNS Trainer sudah dijalankan: tersambung ke NSUNSC dan tampil benar (laporan user, 3 Nov 2026). Pada 4 Nov 2026 user melaporkan semua fungsi trainer berjalan (setelah penambahan Awakening), tanpa error dan tanpa nilai tidak sesuai; rincian per patch dan per kondisi tetap tidak diberikan, jadi tiga kondisi di bawah masih dianggap belum terbukti rinci. Logika yang disalin dari Ramreader terbukti di sana, tetapi versi mandiri ini baru lolos build. Uji setelah R1-4e: tiap patch (tim kebal, musuh kena), Team Bar auto-lock, Gold Ticket, hotkey, di 3 kondisi (match sekarang, rematch, ganti karakter lalu match baru).
 
@@ -174,4 +177,24 @@ Label: FAKTA = laporan, screenshot, atau hasil perintah user; DUGAAN = belum ter
 
 **Belum terbukti.** DUGAAN: `r15d + edi` adalah seluruh tambahan EXP dan `r11d` total sebelum match (kesimpulan dari kode; hasil x10 mendukung, belum membuktikan persis). TIDAK TAHU: apakah baris "Poin Exp" lain (+0D8h dan +0DCh) ikut terkali; apakah ada lompatan dari luar ke tengah 22 byte hook (kode sebelum +B308E8 tidak dibaca); apakah pengali di atas 10 (mis. x100) benar-benar bekerja, karena belum dites; level naik normal, kekalahan, dan karakter lain tidak dilaporkan.
 
-**Ide belum dibangun (pertanyaan user).** Jalan di latar lewat system tray (area notifikasi): tombol X menyembunyikan jendela, patch tetap aktif, Exit lewat menu tray (yang mengembalikan byte asli). Keputusan perilaku tombol X belum diberikan user. DUGAAN: hotkey tetap bekerja saat jendela tersembunyi; kontrol tray WPF-UI 4.3.0 belum diperiksa.
+**Ide belum dibangun (pertanyaan user).** Jalan di latar lewat system tray (area notifikasi): tombol X menyembunyikan jendela, patch tetap aktif, Exit lewat menu tray (yang mengembalikan byte asli). Sudah dibangun pada sesi yang sama; lihat bagian 13.
+
+## 13. Catatan sesi 5 Nov 2026 (tray, rilis v1.4.0, ide cheat)
+
+Label: FAKTA = laporan, screenshot, atau hasil perintah user; DUGAAN = belum terbukti; TIDAK TAHU = jangan dianggap benar.
+
+**Aturan tray (disepakati user).** Tombol X menutup total (byte asli game dikembalikan) bila game tidak tersambung atau tidak ada cheat aktif. Bila game tersambung dan ada cheat aktif, X menyembunyikan trainer ke tray (system tray, area notifikasi; di Windows 11 di balik panah ^); trainer tetap jalan sampai Exit di menu tray, dan dibuka lagi lewat klik ganda ikon atau Open. "Cheat aktif" = ada switch di daftar yang menyala atau ada nilai yang di-Lock; dicek saat X ditekan. Team Bar dan lainnya normal lewat switch, tanpa auto-lock.
+
+**Yang ditambahkan (build lolos, dilaporkan user).**
+- `NsunsTrainer.csproj`: `UseWindowsForms` true (dipakai `NotifyIcon`), serta `Using Remove` untuk `System.Windows.Forms` dan `System.Drawing` agar nama tidak bentrok dengan WPF. Komponen WPF-UI untuk tray tidak dipakai (API 4.3.0 tidak diperiksa).
+- `App.xaml`: `StartupUri` dihapus, `ShutdownMode="OnLastWindowClose"`. `App.xaml.cs`: `OnStartup` membuat Mutex `Local\NSUNS Trainer single instance`; instance kedua men-set `EventWaitHandle` `Local\NSUNS Trainer show window` lalu `Shutdown()`; thread latar `ShowWindowListener` menunggu event itu dan memanggil `MainWindow.ShowFromTray()`. Jendela utama dibuat manual di `OnStartup`.
+- `MainViewModel.ShouldStayInTray`: `Session.IsConnected && (Toggles.Any(t => t.IsOn) || Features.Any(f => f.IsFrozen))`.
+- `MainWindow.xaml.cs`: `NotifyIcon` (menu Open dan Exit; ikon dari `Environment.ProcessPath`, double click = Open). `OnClosing` membatalkan penutupan, memanggil `Hide()`, dan menampilkan balloon tip bila `ShouldStayInTray`, kecuali `_exiting`. `ShowFromTray`, `ExitFromTray` (set `_exiting` lalu `Close`), `SessionEnding` men-set `_exiting`. `OnClosed` membuang ikon dan tetap memanggil `Shutdown()` seperti sebelumnya.
+
+**FAKTA (laporan user, 5 Nov 2026).** Mode tray berjalan dan cheat masih berfungsi ("sudah ku coba versi minimize tray, dan masih berfungsi"). Rincian (X menutup total saat tanpa cheat, exe kedua memunculkan jendela lama, Exit mematikan cheat, hotkey saat tersembunyi) tidak dilaporkan satu per satu.
+
+**Rilis v1.4.0.** Disiapkan: publish dengan `$ver = "1.4.0"`, commit "feat: hide to system tray while connected with a cheat on (v1.4.0)", tag `v1.4.0`, deskripsi memuat tray dan batas EXP 100000. Terbitnya belum dilaporkan. Hasil `Select-String` untuk `MaxMultiplier` (apakah edit batas EXP 100000 ada di kode) belum dilaporkan, padahal deskripsi menyebutnya. Ukuran exe: TIDAK TAHU (dugaan AI: naik karena Windows Forms ikut).
+
+**Belum terbukti.** DUGAAN: hotkey tetap bekerja saat jendela tersembunyi (yang dilaporkan hanya cheat masih berfungsi). TIDAK TAHU: apakah ikon tray tampil dengan ikon exe (bukan ikon default) bila `ExtractAssociatedIcon` gagal.
+
+**Ide cheat (belum dibangun, belum diverifikasi ada di game).** Damage Reduction (kebalikan Damage Multiplier di +94BADB: sisi pemain dikali di bawah 1, tanpa pencarian baru), Freeze Timer, Gold Ticket Multiplier, pengali hadiah layar hasil lain, lock sumber lain (jutsu, support, item). Tidak disarankan: membuka semua karakter atau kostum (tersimpan di data simpanan, risiko merusak save). Game lain: kerangka Ramreader dan trainer berlaku, syaratnya game offline dan single-player tanpa anti-cheat. AI merekomendasikan Damage Reduction dan bertanya apakah user lanjut di NSUNSC atau game lain; user belum menjawab.
