@@ -11,6 +11,7 @@
     <Version>1.0.0</Version>
     <ApplicationIcon>Assets\NsunsTrainer.ico</ApplicationIcon>
     <UseWindowsForms>true</UseWindowsForms>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
